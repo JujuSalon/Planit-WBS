@@ -389,7 +389,9 @@ const db=firebase.firestore();
 let currentUser=null,saveTimer=null;
 
 function signInGoogle(){
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+  const provider=new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({prompt:'select_account'});
+  auth.signInWithPopup(provider)
     .catch(e=>alert('로그인 실패: '+e.message));
 }
 function signOutGoogle(){
