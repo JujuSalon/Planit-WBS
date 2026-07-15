@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planit WBS</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234361ee'/%3E%3Crect x='5' y='7' width='14' height='5' rx='2.5' fill='white'/%3E%3Crect x='10' y='14' width='17' height='5' rx='2.5' fill='white' opacity='.75'/%3E%3Crect x='5' y='21' width='11' height='5' rx='2.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surface:#fff;--border:#dee2e6;
+  --text:#1a1a2e;--muted:#6c757d;--primary:#4361ee;
+  --header-h:52px;
+  --ldh:0px;--wdh:20px;
+  --l0:20px;--w0:180px;
+  --l1:200px;--w1:36px;
+  --l2:236px;--w2:60px;
+  --l3:296px;--w3:50px;
+  --l4:346px;--w4:76px;
+  --l5:422px;--w5:82px;
+  --l6:504px;--w6:76px;
+  --l7:580px;--w7:64px;
+  --l8:644px;--w8:52px;
+  --l9:696px;--w9:52px;
+  --l10:748px;--w10:48px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);height:100vh;
+  display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+
+header{height:var(--header-h);background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 16px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06);
+  position:relative;z-index:10}
+header h1{font-size:17px;font-weight:800;color:var(--primary);letter-spacing:-.5px;flex-shrink:0}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;
+  border-radius:7px;border:1px solid var(--border);background:var(--surface);
+  cursor:pointer;font-size:12px;font-weight:500;color:var(--text);transition:background .12s;white-space:nowrap}
+.btn:hover{background:#f0f0f8}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:#3451d1;border-color:#3451d1}
+.btn-sm{padding:3px 8px;font-size:11px}
+.btn-danger{color:#dc3545;border-color:#dc3545}
+.btn-danger:hover{background:#fff0f0}
+.toggle{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.toggle button{padding:5px 13px;border:none;background:var(--surface);cursor:pointer;font-size:12px;font-weight:500;color:var(--muted)}
+.toggle button.active{background:var(--primary);color:#fff}
+
+.proj-wrap{position:relative;flex-shrink:0}
+.proj-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;
+  border:1px solid var(--border);border-radius:7px;background:white;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--text);max-width:220px;transition:background .12s}
+.proj-btn:hover{background:#f0f0f8}
+.proj-btn-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.proj-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;
+  background:white;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.13);min-width:260px;z-index:200;overflow:hidden}
+.proj-panel.show{display:block}
+.proj-list{max-height:280px;overflow-y:auto}
+.proj-list::-webkit-scrollbar{width:5px}
+.proj-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.proj-item{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;
+  border-left:3px solid transparent;transition:background .1s;border-bottom:1px solid #f5f5f5}
+.proj-item:last-child{border-bottom:none}
+.proj-item:hover{background:#f8f9ff}
+.proj-item.active{border-left-color:var(--primary);background:#f0f4ff}
+.proj-item-name{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-item.active .proj-item-name{font-weight:600;color:var(--primary)}
+.proj-item-acts{display:none;gap:3px;flex-shrink:0}
+.proj-item:hover .proj-item-acts{display:flex}
+.proj-panel-footer{padding:8px 12px;border-top:1px solid var(--border);background:#fafafa}
+
+.gantt-wrap{flex:1;overflow:auto}
+.gantt-wrap::-webkit-scrollbar{width:7px;height:7px}
+.gantt-wrap::-webkit-scrollbar-track{background:#e9ecef}
+.gantt-wrap::-webkit-scrollbar-thumb{background:#bbb;border-radius:4px}
+.gantt-wrap::-webkit-scrollbar-thumb:hover{background:#999}
+
+table{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px}
+th,td{border:1px solid var(--border)}
+
+.sdh{position:sticky;left:var(--ldh);z-index:2;background:var(--surface);width:var(--wdh);min-width:var(--wdh);text-align:center;padding:0;vertical-align:middle}
+.s0{position:sticky;left:var(--l0);z-index:2;background:var(--surface);width:var(--w0);min-width:var(--w0)}
+.s1{position:sticky;left:var(--l1);z-index:2;background:var(--surface);width:var(--w1);min-width:var(--w1);text-align:center}
+.s2{position:sticky;left:var(--l2);z-index:2;background:var(--surface);width:var(--w2);min-width:var(--w2);text-align:center}
+.s3{position:sticky;left:var(--l3);z-index:2;background:var(--surface);width:var(--w3);min-width:var(--w3);text-align:center}
+.s4{position:sticky;left:var(--l4);z-index:2;background:var(--surface);width:var(--w4);min-width:var(--w4)}
+.s5{position:sticky;left:var(--l5);z-index:2;background:var(--surface);width:var(--w5);min-width:var(--w5)}
+.s6{position:sticky;left:var(--l6);z-index:2;background:var(--surface);width:var(--w6);min-width:var(--w6)}
+.s7{position:sticky;left:var(--l7);z-index:2;background:var(--surface);width:var(--w7);min-width:var(--w7);text-align:center}
+.s8{position:sticky;left:var(--l8);z-index:2;background:var(--surface);width:var(--w8);min-width:var(--w8);text-align:center}
+.s9{position:sticky;left:var(--l9);z-index:2;background:var(--surface);width:var(--w9);min-width:var(--w9);text-align:center}
+.s10{position:sticky;left:var(--l10);z-index:2;background:var(--surface);width:var(--w10);min-width:var(--w10);text-align:center;box-shadow:1px 0 0 var(--border)}
+
+.h-month th{position:sticky;top:0;z-index:3;background:#2d3748;color:#fff;text-align:center;font-size:11px;font-weight:600;height:22px}
+.h-month .sdh,.h-month .s0,.h-month .s1,.h-month .s2,.h-month .s3,.h-month .s4,.h-month .s5,.h-month .s6,.h-month .s7,.h-month .s8,.h-month .s9,.h-month .s10{z-index:6}
+.h-day th{position:sticky;top:22px;z-index:3;background:#4a5568;color:#fff;text-align:center;font-size:11px;height:26px;font-weight:400}
+.h-day .sdh,.h-day .s0,.h-day .s1,.h-day .s2,.h-day .s3,.h-day .s4,.h-day .s5,.h-day .s6,.h-day .s7,.h-day .s8,.h-day .s9,.h-day .s10{z-index:6}
+.h-day .th-we{background:#3d4a5a;color:#a0aec0}
+.h-day .th-tod{background:#b7791f}
+.h-day .th-hol{background:#3d4a5a;color:#a0aec0}
+.h-day .th-ref{background:#5a6475;color:#d1d8e0;border-left:2px solid #e63946}
+
+.dc{cursor:pointer;user-select:none}
+.dc:hover{filter:brightness(.88)}
+body.locked .dc{cursor:default}
+body.locked .dc:hover{filter:none}
+.dc.we{background:#eef0f5}
+.dc.tod{background:#fffde7}
+.dc.hol{background:#eef0f5}
+
+/* progress cells */
+.prog{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:2px;padding:2px 4px}
+.prog-val{font-size:11px;font-weight:700;line-height:1}
+.prog-bar{width:36px;height:3px;border-radius:2px;background:#e9ecef;overflow:hidden;flex-shrink:0}
+.prog-fill{height:100%;border-radius:2px;transition:width .2s}
+.prog-ahead{color:#065f46}.prog-behind{color:#b91c1c}.prog-na{color:var(--muted)}
+.ps-badge{display:inline-flex;align-items:center;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:700;white-space:nowrap}
+.ps-normal{background:#d1fae5;color:#065f46}
+.ps-warn{background:#fef3c7;color:#92400e}
+.ps-delay{background:#fee2e2;color:#b91c1c}
+
+/* status badges */
+.st-badge{display:inline-flex;align-items:center;justify-content:center;
+  padding:2px 6px;border-radius:10px;font-size:10px;font-weight:600;
+  cursor:pointer;white-space:nowrap;user-select:none;transition:filter .1s}
+.st-badge:hover{filter:brightness(.9)}
+.st-wait{background:#e9ecef;color:#495057}
+.st-doing{background:#dbeafe;color:#1d4ed8}
+.st-done{background:#d1fae5;color:#065f46}
+
+.g-row td{height:30px;font-weight:600}
+.t-row td{height:34px}
+.nc{display:flex;align-items:center;gap:3px;padding:0 4px;height:100%;overflow:hidden}
+.nc-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;padding:0 2px}
+.nc-actions{display:none;gap:2px;flex-shrink:0}
+.t-row:hover .nc-actions,.g-row:hover .nc-actions{display:flex}
+.ic{background:none;border:none;cursor:pointer;padding:2px 3px;border-radius:4px;color:var(--muted);font-size:11px;line-height:1}
+.ic:hover{background:#e0e4f0;color:var(--text)}
+
+.dh{cursor:grab;color:#ccc;font-size:14px;user-select:none;line-height:1}
+.dh:hover{color:#999}
+.dh:active{cursor:grabbing;color:var(--primary)}
+.t-row:hover .dh,.g-row:hover .dh{display:block}
+.drop-above>td{box-shadow:inset 0 2px 0 var(--primary)!important}
+.drop-below>td{box-shadow:inset 0 -2px 0 var(--primary)!important}
+.row-dragging{opacity:.4}
+
+.cv{display:flex;align-items:center;padding:0 6px;height:100%;overflow:hidden;white-space:nowrap;font-size:12px;cursor:pointer}
+.s2 .cv,.s3 .cv,.s4 .cv,.s5 .cv,.s6 .cv{justify-content:center}
+.cv:hover{background:#f0f4ff}
+.cv.muted{color:var(--muted)}
+.cv.act{color:#2d6a4f;font-weight:500}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.cell-input{width:100%;height:100%;border:none;background:#eef2ff;padding:0 6px;
+  font-size:12px;font-family:inherit;outline:none;box-shadow:inset 0 0 0 2px var(--primary);color:var(--text)}
+
+.hol-list{max-height:260px;overflow-y:auto;margin-top:8px}
+.hol-list::-webkit-scrollbar{width:5px}
+.hol-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.hol-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.hol-item:last-child{border-bottom:none}
+.hol-item-date{font-size:12px;font-weight:600;color:var(--primary);white-space:nowrap}
+.hol-item-name{flex:1;font-size:12px;color:var(--text)}
+.hol-add-row{display:flex;gap:6px;align-items:center;margin-top:10px}
+.hol-add-row input{padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;font-family:inherit}
+.hol-add-row input:focus{border-color:var(--primary)}
+.hol-note{font-size:11px;color:var(--muted);margin-top:8px;padding:8px 10px;background:#f8f9ff;border-radius:6px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;width:440px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal h2{font-size:15px;font-weight:700;margin-bottom:4px}
+.modal .sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fg input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .12s}
+.fg input:focus{border-color:var(--primary)}
+.dr{display:flex;gap:6px;align-items:center}.dr input{flex:1}.dr span{color:var(--muted);font-size:13px}
+.mf{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+.mf-r{display:flex;gap:8px}
+.color-grid{display:flex;gap:7px;flex-wrap:wrap}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .12s}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px currentColor}
+
+/* Milestone styles */
+.ms-list{max-height:150px;overflow-y:auto;margin-bottom:2px}
+.ms-list::-webkit-scrollbar{width:5px}
+.ms-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.ms-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ms-item:last-child{border-bottom:none}
+.ms-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ms-color-btn{width:17px;height:17px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:transform .1s}
+.ms-color-btn:hover{transform:scale(1.15)}
+.ms-color-btn.sel{border-color:#333}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Planit WBS</h1>
+  <div class="proj-wrap" id="projWrap">
+    <button class="proj-btn" id="projBtn" onclick="toggleProjPanel()">
+      <span style="font-size:14px">📁</span>
+      <span class="proj-btn-name" id="projBtnName">—</span>
+      <span style="font-size:9px;color:var(--muted)">▾</span>
+    </button>
+    <div class="proj-panel" id="projPanel">
+      <div class="proj-list" id="projList"></div>
+      <div class="proj-panel-footer">
+        <button class="btn btn-sm" style="width:100%;justify-content:center" onclick="newProject()">+ 새 프로젝트</button>
+      </div>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap">기준일</span>
+    <input type="date" id="refDateInput" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer" oninput="setRefDate(this.value)" title="기준일 설정 시 예상진척이 해당 날짜 기준으로 계산됩니다">
+  </div>
+  <div class="sep"></div>
+  <button class="btn btn-primary" onclick="openGM()">+ 새 그룹</button>
+  <button class="btn" onclick="exportXlsx()" title="엑셀로 내보내기"><svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle"><rect width="14" height="14" rx="2" fill="#217346"/><path d="M3.5 3.5 L5.9 7 L3.5 10.5 H5.4 L7 7.9 L8.6 10.5 H10.5 L8.1 7 L10.5 3.5 H8.6 L7 6.1 L5.4 3.5 Z" fill="white"/></svg> 다운로드</button>
+  <button class="btn" onclick="openHolModal()" title="휴일 관리">🗓 휴일 관리</button>
+  <button class="btn" onclick="openSett()" title="프로젝트 기간 및 마감일 설정">⚙ 프로젝트 설정</button>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div class="toggle">
+      <button id="bd" class="active" onclick="setView('day')">일</button>
+      <button id="bw" onclick="setView('week')">주</button>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn" onclick="shift(-1)">◀</button>
+      <button class="btn" onclick="goToday()">오늘</button>
+      <button class="btn" onclick="shift(1)">▶</button>
+    </div>
+    <div class="sep"></div>
+    <div style="display:flex;align-items:center;gap:3px">
+      <button class="btn btn-sm" onclick="adjustZoom(-5)" style="padding:3px 7px;font-size:13px;line-height:1">−</button>
+      <span id="zoomLabel" style="font-size:11px;color:var(--muted);min-width:34px;text-align:center">90%</span>
+      <button class="btn btn-sm" onclick="adjustZoom(5)" style="padding:3px 7px;font-size:13px;line-height:1">+</button>
+    </div>
+    <div class="sep"></div>
+    <button class="btn" id="lockBtn" onclick="toggleLock()" title="차트 영역 잠금/해제">🔓 편집중</button>
+  </div>
+</header>
+
+<div class="gantt-wrap" id="gw">
+  <table id="gt"><thead id="gh"></thead><tbody id="gb"></tbody></table>
+</div>
+
+<!-- Project Settings Modal -->
+<div class="overlay" id="settModal">
+  <div class="modal" style="width:500px">
+    <h2>프로젝트 설정</h2>
+    <p class="sub">전체 기간을 설정하면 주 보기에서 프로젝트 전체 일정이 한눈에 표시됩니다.</p>
+    <div class="fg">
+      <label>프로젝트 기간</label>
+      <div class="dr"><input id="settStart" type="date"/><span>~</span><input id="settEnd" type="date"/></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:-6px">※ 일 보기는 90일 창으로 ◀/▶ 탐색, 주 보기는 설정 기간 전체 표시</p>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">마감일 / 이벤트</label>
+      <div class="ms-list" id="msList"></div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap">
+        <input type="date" id="msDate" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;font-family:inherit;flex-shrink:0"/>
+        <input type="text" id="msName" placeholder="예: 출시일, 검수 마감" style="flex:1;min-width:100px;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;font-family:inherit"/>
+        <div id="msColorPicker" style="display:flex;gap:4px;align-items:center;flex-shrink:0"></div>
+        <button class="btn btn-primary btn-sm" onclick="addMilestone()" style="flex-shrink:0">추가</button>
+      </div>
+    </div>
+    <div class="mf" style="margin-top:16px">
+      <button class="btn" onclick="closeSett()">취소</button>
+      <button class="btn btn-primary" onclick="saveSett()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Manager Modal -->
+<div class="overlay" id="holModal">
+  <div class="modal" style="width:480px">
+    <h2>휴일 관리</h2>
+    <p class="sub">공휴일은 자동 표시됩니다. 회사·프로젝트 전용 휴일을 추가하세요.</p>
+    <div class="hol-add-row">
+      <input type="date" id="holDate" style="width:150px"/>
+      <input type="text" id="holName" placeholder="휴일명 (예: 여름 휴가)" style="flex:1"/>
+      <button class="btn btn-primary btn-sm" onclick="addCustomHol()">추가</button>
+    </div>
+    <div class="hol-list" id="holList"></div>
+    <p class="hol-note">💡 이 프로젝트에만 적용되는 휴일입니다. 간트 차트에 공휴일과 같은 방식으로 표시됩니다.</p>
+    <div class="mf" style="margin-top:16px"><div></div>
+      <button class="btn btn-primary" onclick="closeHolModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Project rename modal -->
+<div class="overlay" id="pModal">
+  <div class="modal" style="width:360px">
+    <h2>프로젝트 이름 변경</h2>
+    <div class="fg"><label>프로젝트명</label><input id="pName" placeholder="프로젝트 이름"/></div>
+    <div class="mf">
+      <button class="btn" onclick="closePM()">취소</button>
+      <button class="btn btn-primary" onclick="saveProjName()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group Modal -->
+<div class="overlay" id="gModal">
+  <div class="modal">
+    <h2 id="gTitle">그룹 추가</h2>
+    <div class="fg"><label>그룹명</label><input id="gName" placeholder="예: 기획, 개발, QA"/></div>
+    <div class="fg"><label>색상</label><div class="color-grid" id="colorGrid"></div></div>
+    <div class="mf">
+      <button class="btn" onclick="closeGM()">취소</button>
+      <div class="mf-r">
+        <button class="btn btn-danger" id="gDelBtn" style="display:none" onclick="delGroup()">삭제</button>
+        <button class="btn btn-primary" onclick="saveGroup()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="overlay" id="tModal">
+  <div class="modal">
+    <h2 id="tTitle">업무 추가</h2>
+    <div class="fg"><label>업무명</label><input id="tName" placeholder="업무 이름"/></div>
+    <div class="fg"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
+    <div class="fg">
+      <label>시작일 ~ 예상종료일</label>
+      <div class="dr"><input id="tS" type="date"/><span>~</span><input id="tEE" type="date"/></div>
+    </div>
+    <div class="fg"><label>실종료일</label><input id="tAE" type="date"/></div>
+    <div class="fg"><label>업무 링크 <span style="font-weight:400;text-transform:none;font-size:11px">(Jira, Notion 등)</span></label><input id="tLink" type="url" placeholder="https://..."/></div>
+    <div class="mf">
+      <button class="btn" onclick="closeTM()">취소</button>
+      <div class="mf-r">
+        <button class="btn btn-danger" id="tDelBtn" style="display:none" onclick="delTask()">삭제</button>
+        <button class="btn btn-primary" onclick="saveTask()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// Constants
+// ═══════════════════════════════════════
+const COLORS=['#4361ee','#3a86ff','#06d6a0','#ffd166','#ef476f','#f72585','#7209b7','#4cc9f0','#118ab2','#073b4c','#8338ec','#fb5607'];
+
+// LCOLS: [cssClass, label, leftPx, field, tooltipText?]
+const LCOLS=[
+  ['s0','업무명',    20,   'name'],
+  ['s1','링크',     200,  'link'],
+  ['s2','담당자',   236,  'assignee'],
+  ['s3','MD',       296,  'md'],
+  ['s4','시작일',    346,  'startDate'],
+  ['s5','예상종료일', 422, 'expectedEndDate'],
+  ['s6','실종료일',  504,  'actualEndDate'],
+  ['s7','상태',     580,  'status'],
+  ['s8','예상진척',  644,  '_expectedProgress'],
+  ['s9','실진척률',  696,  'actualProgress'],
+  ['s10','진척상태', 748,  '_scheduleStatus','정상 : 예상 대비 5%p 이내\n주의 : 6 ~ 15%p 차이\n지연 : 15%p 초과\n\n※ 완료 업무 제외 표시\n※ 실진척률 미입력 시 0% 로 간주'],
+];
+
+const STATUS_LIST=['대기','진행중','완료'];
+const STATUS_CLASS={'대기':'st-wait','진행중':'st-doing','완료':'st-done'};
+const MS_COLORS=['#e63946','#f4a261','#f1c40f','#2ecc71','#4361ee','#7209b7','#f72585'];
+let selMsColor=MS_COLORS[0];
+
+// 한국 공휴일 2023–2030
+const KR_HOL={
+  '2023-01-01':'신정','2023-01-02':'신정 대체',
+  '2023-01-21':'설날 연휴','2023-01-22':'설날','2023-01-23':'설날 연휴','2023-01-24':'대체공휴일',
+  '2023-03-01':'삼일절','2023-05-05':'어린이날',
+  '2023-05-27':'부처님오신날','2023-05-29':'부처님오신날 대체',
+  '2023-06-06':'현충일','2023-08-15':'광복절',
+  '2023-09-28':'추석 연휴','2023-09-29':'추석','2023-09-30':'추석 연휴','2023-10-02':'대체공휴일',
+  '2023-10-03':'개천절','2023-10-09':'한글날','2023-12-25':'크리스마스',
+  '2024-01-01':'신정',
+  '2024-02-09':'설날 연휴','2024-02-10':'설날','2024-02-11':'설날 연휴','2024-02-12':'대체공휴일',
+  '2024-03-01':'삼일절','2024-04-10':'국회의원 선거',
+  '2024-05-05':'어린이날','2024-05-06':'어린이날 대체','2024-05-15':'부처님오신날',
+  '2024-06-06':'현충일','2024-08-15':'광복절',
+  '2024-09-16':'추석 연휴','2024-09-17':'추석','2024-09-18':'추석 연휴',
+  '2024-10-03':'개천절','2024-10-09':'한글날','2024-12-25':'크리스마스',
+  '2025-01-01':'신정',
+  '2025-01-28':'설날 연휴','2025-01-29':'설날','2025-01-30':'설날 연휴',
+  '2025-03-01':'삼일절','2025-03-03':'삼일절 대체',
+  '2025-05-05':'어린이날·부처님오신날','2025-05-06':'대체공휴일',
+  '2025-06-06':'현충일','2025-08-15':'광복절','2025-10-03':'개천절',
+  '2025-10-05':'추석 연휴','2025-10-06':'추석','2025-10-07':'추석 연휴','2025-10-08':'대체공휴일',
+  '2025-10-09':'한글날','2025-12-25':'크리스마스',
+  '2026-01-01':'신정',
+  '2026-02-16':'설날 연휴','2026-02-17':'설날','2026-02-18':'설날 연휴',
+  '2026-03-01':'삼일절','2026-03-02':'삼일절 대체',
+  '2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'부처님오신날 대체',
+  '2026-06-06':'현충일','2026-06-08':'현충일 대체','2026-08-15':'광복절','2026-08-17':'광복절 대체',
+  '2026-09-24':'추석 연휴','2026-09-25':'추석','2026-09-26':'추석 연휴','2026-09-28':'대체공휴일',
+  '2026-10-03':'개천절','2026-10-05':'개천절 대체','2026-10-09':'한글날','2026-12-25':'크리스마스',
+  '2027-01-01':'신정',
+  '2027-02-05':'설날 연휴','2027-02-06':'설날','2027-02-07':'설날 연휴','2027-02-08':'대체공휴일',
+  '2027-03-01':'삼일절','2027-05-05':'어린이날','2027-05-13':'부처님오신날',
+  '2027-06-06':'현충일','2027-06-07':'현충일 대체','2027-08-15':'광복절','2027-08-16':'광복절 대체',
+  '2027-10-03':'개천절','2027-10-04':'개천절 대체','2027-10-09':'한글날','2027-10-11':'한글날 대체',
+  '2027-10-14':'추석 연휴','2027-10-15':'추석','2027-10-16':'추석 연휴','2027-10-18':'대체공휴일',
+  '2027-12-25':'크리스마스','2027-12-27':'크리스마스 대체',
+  '2028-01-01':'신정','2028-01-03':'신정 대체',
+  '2028-01-25':'설날 연휴','2028-01-26':'설날','2028-01-27':'설날 연휴',
+  '2028-03-01':'삼일절','2028-05-02':'부처님오신날','2028-05-05':'어린이날',
+  '2028-06-06':'현충일','2028-08-15':'광복절',
+  '2028-10-02':'추석 연휴','2028-10-03':'추석·개천절','2028-10-04':'추석 연휴','2028-10-05':'대체공휴일',
+  '2028-10-09':'한글날','2028-12-25':'크리스마스',
+  '2029-01-01':'신정',
+  '2029-02-12':'설날 연휴','2029-02-13':'설날','2029-02-14':'설날 연휴',
+  '2029-03-01':'삼일절','2029-05-05':'어린이날','2029-05-07':'어린이날 대체',
+  '2029-05-20':'부처님오신날','2029-05-21':'부처님오신날 대체',
+  '2029-06-06':'현충일','2029-08-15':'광복절',
+  '2029-09-21':'추석 연휴','2029-09-22':'추석','2029-09-23':'추석 연휴','2029-09-24':'대체공휴일',
+  '2029-10-03':'개천절','2029-10-09':'한글날','2029-12-25':'크리스마스',
+  '2030-01-01':'신정',
+  '2030-02-02':'설날 연휴','2030-02-03':'설날','2030-02-04':'설날 연휴',
+  '2030-03-01':'삼일절','2030-05-05':'어린이날','2030-05-06':'어린이날 대체','2030-05-09':'부처님오신날',
+  '2030-06-06':'현충일','2030-08-15':'광복절',
+  '2030-09-11':'추석 연휴','2030-09-12':'추석','2030-09-13':'추석 연휴',
+  '2030-10-03':'개천절','2030-10-09':'한글날','2030-12-25':'크리스마스',
+};
+
+// ═══════════════════════════════════════
+// State
+// ═══════════════════════════════════════
+let APP={projects:[],activeId:null};
+let S=null;
+let locked=false;
+let refDate=null;
+let zoomLevel=90;
+let editGid=null,editTid=null,editGidForT=null,selColor=COLORS[0],editProjId=null;
+const drag={on:false,tid:null,mode:null,anchor:null,offset:0,dur:0};
+const rd={active:false,type:null,srcGid:null,srcTid:null,srcTr:null};
+
+// ═══════════════════════════════════════
+// Date utils
+// ═══════════════════════════════════════
+const tod=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const parse=s=>{if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);};
+const fmt=d=>{if(!d)return'';return`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;};
+const p2=n=>String(n).padStart(2,'0');
+const addD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const diff=(a,b)=>Math.round((b-a)/864e5);
+const same=(a,b)=>a&&b&&fmt(a)===fmt(b);
+const monOf=d=>{const r=new Date(d);const dow=r.getDay();r.setDate(r.getDate()-(dow===0?6:dow-1));return r;};
+const sdf=d=>{if(!d)return'';return`${String(d.getFullYear()).slice(2)}/${d.getMonth()+1}/${d.getDate()}`;};
+
+function holName(d){return KR_HOL[fmt(d)]||(S&&S.customHols&&S.customHols[fmt(d)])||null;}
+function getMilestone(d){
+  if(!S||!S.milestones||!S.milestones.length)return null;
+  if(S.viewMode==='week'){const we=addD(d,6);return S.milestones.find(m=>{const md=parse(m.date);return md>=d&&md<=we;})||null;}
+  return S.milestones.find(m=>m.date===fmt(d))||null;
+}
+
+// ═══════════════════════════════════════
+// Persistence
+// ═══════════════════════════════════════
+const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+const save=()=>localStorage.setItem('wbs_app',JSON.stringify(APP));
+
+function makeProject(name='새 프로젝트',groups=[],viewMode='day'){
+  return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[]};
+}
+function migrate(p){
+  if(!p.customHols)p.customHols={};
+  if(p.projectStart===undefined)p.projectStart=null;
+  if(p.projectEnd===undefined)p.projectEnd=null;
+  if(!p.milestones)p.milestones=[];
+  (p.groups||[]).forEach(g=>(g.tasks||[]).forEach(t=>{
+    if(t.endDate&&!t.expectedEndDate){t.expectedEndDate=t.endDate;delete t.endDate;}
+    if(!t.status)t.status='대기';
+    if(t.actualProgress===undefined)t.actualProgress=null;
+    if(t.assignee===undefined)t.assignee=null;
+  }));
+  return p;
+}
+function setActive(id){
+  APP.activeId=id;S=APP.projects.find(p=>p.id===id);
+  if(S&&!S.viewStart)S.viewStart=fmt(addD(tod(),-7));
+}
+function init(){
+  try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e){}
+  if(!APP.projects||!APP.projects.length){
+    let old=null;try{const s=localStorage.getItem('wbs3');if(s)old=JSON.parse(s);}catch(e){}
+    const p=old?makeProject('기본 프로젝트',old.groups||[],old.viewMode||'day'):makeProject();
+    if(old)p.viewStart=old.viewStart||p.viewStart;
+    APP={projects:[p],activeId:p.id};
+  }
+  if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
+  setActive(APP.activeId);APP.projects.forEach(migrate);
+  try{const z=localStorage.getItem('wbs_zoom');if(z)zoomLevel=Math.min(150,Math.max(50,parseInt(z)||100));}catch(e){}
+  applyZoom();
+  refDate=tod();
+  const rdi=document.getElementById('refDateInput');
+  rdi.value=fmt(tod());rdi.style.borderColor='var(--primary)';
+  renderProjSelector();render();
+  toggleLock();
+}
+
+// ═══════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════
+const esc=s=>s?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';
+const hex2rgba=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;};
+const blendColor=(h,a)=>{const r=Math.round(parseInt(h.slice(1,3),16)*a+255*(1-a)),g=Math.round(parseInt(h.slice(3,5),16)*a+255*(1-a)),b=Math.round(parseInt(h.slice(5,7),16)*a+255*(1-a));return`rgb(${r},${g},${b})`;};
+const findGroup=gid=>S.groups.find(g=>g.id===gid);
+const findTask=tid=>{for(const g of S.groups){const t=g.tasks.find(t=>t.id===tid);if(t)return t;}return null;};
+const groupOfTask=tid=>{for(const g of S.groups){if(g.tasks.find(t=>t.id===tid))return g;}return null;};
+function cellInRange(d,ts,te){
+  if(!ts||!te)return false;
+  if(S.viewMode==='week'){const ce=addD(d,6);return d<=te&&ce>=ts;}
+  return d>=ts&&d<=te;
+}
+function nextStatus(s){const i=STATUS_LIST.indexOf(s||'대기');return STATUS_LIST[(i+1)%STATUS_LIST.length];}
+
+// working days (weekends + holidays excluded) from 'from' to 'to' inclusive
+function workDays(from,to){
+  let count=0,d=new Date(from);d.setHours(0,0,0,0);
+  const end=new Date(to);end.setHours(0,0,0,0);
+  while(d<=end){const dw=d.getDay();if(dw!==0&&dw!==6&&!holName(d))count++;d=addD(d,1);}
+  return count;
+}
+function calcExpectedProgress(task){
+  if(!task.startDate||!task.expectedEndDate)return null;
+  const ts=parse(task.startDate),te=parse(task.expectedEndDate),now=getRef();
+  if(now<ts)return 0;if(now>te)return 100;
+  const total=workDays(ts,te);if(total===0)return 100;
+  return Math.min(100,Math.round(workDays(ts,now)/total*100));
+}
+// 진척 상태: 정상/주의/지연 (대기·완료는 null)
+function scheduleStatus(expPct,actPct,taskStatus){
+  if(taskStatus==='완료')return null;
+  if(expPct==null)return null;
+  const gap=expPct-(actPct??0); // 실진척률 미입력 시 0% 로 간주
+  if(gap<=5)return'normal';
+  if(gap<=15)return'warn';
+  return'delay';
+}
+const STATUS_BADGE={
+  normal:'<span class="ps-badge ps-normal">정상</span>',
+  warn:  '<span class="ps-badge ps-warn">주의</span>',
+  delay: '<span class="ps-badge ps-delay">지연</span>',
+};
+function renderProgress(expPct,actPct,isDone,taskStatus){
+  if(isDone){actPct=actPct!=null?actPct:100;}
+  if(actPct==null)return'<div class="prog"><span class="prog-val prog-na">—</span></div>';
+  const gap=expPct!=null?expPct-actPct:null;
+  const fillColor=gap==null||gap<=5?'#06d6a0':(gap<=15?'#fbbf24':'#ef476f');
+  return`<div class="prog"><span class="prog-val" style="color:var(--muted)">${actPct}%</span><div class="prog-bar"><div class="prog-fill" style="width:${actPct}%;background:${fillColor}"></div></div></div>`;
+}
+
+// ═══════════════════════════════════════
+// Project management
+// ═══════════════════════════════════════
+function renderProjSelector(){
+  const ne=document.getElementById('projBtnName');ne.textContent=S?S.name:'—';ne.title=S?S.name:'';
+  const list=document.getElementById('projList');list.innerHTML='';
+  APP.projects.forEach(p=>{
+    const item=document.createElement('div');item.className='proj-item'+(p.id===APP.activeId?' active':'');
+    item.innerHTML=`<span style="font-size:14px">📁</span>
+      <span class="proj-item-name" title="${esc(p.name)}">${esc(p.name)}</span>
+      <div class="proj-item-acts">
+        <button class="ic" title="복사" onclick="event.stopPropagation();copyProject('${p.id}')">⊕</button>
+        <button class="ic" title="이름 변경" onclick="event.stopPropagation();openPM('${p.id}')">✏</button>
+        <button class="ic" title="삭제" style="color:#dc3545" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</button>
+      </div>`;
+    item.addEventListener('click',()=>switchProject(p.id));
+    list.appendChild(item);
+  });
+}
+function toggleProjPanel(){const p=document.getElementById('projPanel');p.classList.toggle('show');if(p.classList.contains('show'))renderProjSelector();}
+function closeProjPanel(){document.getElementById('projPanel').classList.remove('show');}
+document.addEventListener('click',e=>{if(!document.getElementById('projWrap').contains(e.target))closeProjPanel();});
+function switchProject(id){
+  setActive(id);save();closeProjPanel();renderProjSelector();
+  document.getElementById('bd').classList.toggle('active',S.viewMode==='day');
+  document.getElementById('bw').classList.toggle('active',S.viewMode==='week');
+  render();
+}
+function newProject(){const p=makeProject();APP.projects.push(p);setActive(p.id);save();closeProjPanel();renderProjSelector();render();openPM(p.id);}
+function copyProject(id){
+  const src=APP.projects.find(p=>p.id===id);if(!src)return;
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.id=uid();copy.name=src.name+' (복사)';
+  copy.groups.forEach(g=>{g.id=uid();g.tasks.forEach(t=>t.id=uid());});
+  APP.projects.splice(APP.projects.findIndex(p=>p.id===id)+1,0,copy);
+  setActive(copy.id);save();closeProjPanel();renderProjSelector();render();
+}
+function deleteProject(id){
+  if(APP.projects.length<=1){alert('마지막 프로젝트는 삭제할 수 없습니다.');return;}
+  const p=APP.projects.find(x=>x.id===id);
+  if(!confirm(`"${p?.name}" 프로젝트를 삭제할까요?\n모든 데이터가 삭제됩니다.`))return;
+  APP.projects=APP.projects.filter(x=>x.id!==id);
+  if(APP.activeId===id)setActive(APP.projects[0].id);
+  save();renderProjSelector();render();
+}
+function openPM(id){
+  editProjId=id;const p=APP.projects.find(x=>x.id===id);if(!p)return;
+  document.getElementById('pName').value=p.name;
+  document.getElementById('pModal').classList.add('show');
+  setTimeout(()=>{document.getElementById('pName').focus();document.getElementById('pName').select();},50);
+}
+function closePM(){document.getElementById('pModal').classList.remove('show');}
+function saveProjName(){
+  const name=document.getElementById('pName').value.trim();if(!name)return;
+  const p=APP.projects.find(x=>x.id===editProjId);if(p)p.name=name;
+  save();closePM();renderProjSelector();
+}
+document.getElementById('pName').addEventListener('keydown',e=>{if(e.key==='Enter')saveProjName();});
+document.getElementById('pModal').addEventListener('click',function(e){if(e.target===this)closePM();});
+
+// ═══════════════════════════════════════
+// Holiday manager
+// ═══════════════════════════════════════
+function openSett(){
+  document.getElementById('settStart').value=S.projectStart||'';
+  document.getElementById('settEnd').value=S.projectEnd||'';
+  document.getElementById('msDate').value='';
+  document.getElementById('msName').value='';
+  selMsColor=MS_COLORS[0];
+  renderMsList();renderMsColorPicker();
+  document.getElementById('settModal').classList.add('show');
+}
+function closeSett(){document.getElementById('settModal').classList.remove('show');}
+function saveSett(){
+  S.projectStart=document.getElementById('settStart').value||null;
+  S.projectEnd=document.getElementById('settEnd').value||null;
+  save();closeSett();render();
+}
+document.getElementById('settModal').addEventListener('click',function(e){if(e.target===this)closeSett();});
+
+function renderMsList(){
+  const list=document.getElementById('msList');list.innerHTML='';
+  const ms=(S.milestones||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  if(!ms.length){list.innerHTML='<p style="color:var(--muted);font-size:12px;padding:6px 0">추가된 이벤트가 없습니다.</p>';return;}
+  ms.forEach(m=>{
+    const item=document.createElement('div');item.className='ms-item';
+    item.innerHTML=`<div class="ms-dot" style="background:${m.color}"></div>
+      <span style="font-size:12px;font-weight:600;color:${m.color};white-space:nowrap;flex-shrink:0">${sdf(parse(m.date))}</span>
+      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)}</span>
+      <button class="ic" onclick="delMilestone('${m.id}')" style="color:#dc3545;font-size:13px;flex-shrink:0">✕</button>`;
+    list.appendChild(item);
+  });
+}
+function renderMsColorPicker(){
+  const picker=document.getElementById('msColorPicker');picker.innerHTML='';
+  MS_COLORS.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='ms-color-btn'+(c===selMsColor?' sel':'');
+    d.style.background=c;
+    d.onclick=()=>{selMsColor=c;renderMsColorPicker();};
+    picker.appendChild(d);
+  });
+}
+function addMilestone(){
+  const date=document.getElementById('msDate').value;
+  const name=document.getElementById('msName').value.trim();
+  if(!date){document.getElementById('msDate').focus();return;}
+  if(!S.milestones)S.milestones=[];
+  S.milestones.push({id:uid(),date,name:name||'이벤트',color:selMsColor});
+  save();renderMsList();render();
+  document.getElementById('msDate').value='';
+  document.getElementById('msName').value='';
+  document.getElementById('msDate').focus();
+}
+function delMilestone(id){
+  if(!S.milestones)return;
+  S.milestones=S.milestones.filter(m=>m.id!==id);
+  save();renderMsList();render();
+}
+
+function openHolModal(){renderHolList();document.getElementById('holDate').value='';document.getElementById('holName').value='';document.getElementById('holModal').classList.add('show');}
+function closeHolModal(){document.getElementById('holModal').classList.remove('show');}
+document.getElementById('holModal').addEventListener('click',function(e){if(e.target===this)closeHolModal();});
+function renderHolList(){
+  const list=document.getElementById('holList');list.innerHTML='';
+  const hols=S.customHols||{};const keys=Object.keys(hols).sort();
+  if(!keys.length){list.innerHTML='<p style="color:var(--muted);font-size:12px;padding:12px 0">추가된 휴일이 없습니다.</p>';return;}
+  keys.forEach(k=>{
+    const item=document.createElement('div');item.className='hol-item';
+    item.innerHTML=`<span class="hol-item-date">${sdf(parse(k))}</span><span class="hol-item-name">${esc(hols[k])}</span><button class="ic" onclick="delCustomHol('${k}')" style="color:#dc3545;font-size:13px">✕</button>`;
+    list.appendChild(item);
+  });
+}
+function addCustomHol(){
+  const date=document.getElementById('holDate').value,name=document.getElementById('holName').value.trim();
+  if(!date){document.getElementById('holDate').focus();return;}
+  if(!S.customHols)S.customHols={};
+  S.customHols[date]=name||'휴일';save();renderHolList();render();
+  document.getElementById('holDate').value='';document.getElementById('holName').value='';document.getElementById('holDate').focus();
+}
+function delCustomHol(k){if(!S.customHols)return;delete S.customHols[k];save();renderHolList();render();}
+document.getElementById('holName').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomHol();});
+document.getElementById('msName').addEventListener('keydown',e=>{if(e.key==='Enter')addMilestone();});
+document.getElementById('msDate').addEventListener('keydown',e=>{if(e.key==='Enter')addMilestone();});
+
+// ═══════════════════════════════════════
+// Excel Export
+// ═══════════════════════════════════════
+const xmlEsc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+const blendHexOn=(h1,a,h2)=>{
+  const r=Math.round(parseInt(h1.slice(1,3),16)*a+parseInt(h2.slice(1,3),16)*(1-a));
+  const g=Math.round(parseInt(h1.slice(3,5),16)*a+parseInt(h2.slice(3,5),16)*(1-a));
+  const b=Math.round(parseInt(h1.slice(5,7),16)*a+parseInt(h2.slice(5,7),16)*(1-a));
+  return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+};
+function crc32Calc(data){
+  if(!crc32Calc._t){const t=new Uint32Array(256);for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c;}crc32Calc._t=t;}
+  const t=crc32Calc._t;let crc=0xFFFFFFFF;
+  for(let i=0;i<data.length;i++)crc=t[(crc^data[i])&0xFF]^(crc>>>8);
+  return(crc^0xFFFFFFFF)>>>0;
+}
+function u16le(v){return[v&0xFF,(v>>8)&0xFF];}
+function u32le(v){return[v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF];}
+function zipPack(files){
+  const enc=new TextEncoder();
+  const localParts=[];const cd=[];let offset=0;
+  const now=new Date();
+  const dt=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+  const tm=(now.getHours()<<11)|(now.getMinutes()<<5)|Math.floor(now.getSeconds()/2);
+  for(const[name,content]of files){
+    const nb=enc.encode(name);const db=enc.encode(content);
+    const crc=crc32Calc(db);const sz=db.length;
+    const lfh=new Uint8Array([0x50,0x4B,0x03,0x04,20,0,0,0,0,0,...u16le(tm),...u16le(dt),...u32le(crc),...u32le(sz),...u32le(sz),...u16le(nb.length),0,0,...nb]);
+    const cde=new Uint8Array([0x50,0x4B,0x01,0x02,20,0,20,0,0,0,0,0,...u16le(tm),...u16le(dt),...u32le(crc),...u32le(sz),...u32le(sz),...u16le(nb.length),0,0,0,0,0,0,0,0,0,0,0,0,...u32le(offset),...nb]);
+    localParts.push(lfh,db);cd.push(cde);
+    offset+=lfh.length+sz;
+  }
+  const cdSz=cd.reduce((a,b)=>a+b.length,0);
+  const eocd=new Uint8Array([0x50,0x4B,0x05,0x06,0,0,0,0,...u16le(files.length),...u16le(files.length),...u32le(cdSz),...u32le(offset),0,0]);
+  const parts=[...localParts,...cd,eocd];
+  const total=parts.reduce((a,b)=>a+b.length,0);
+  const buf=new Uint8Array(total);let pos=0;
+  for(const p of parts){buf.set(p,pos);pos+=p.length;}
+  return buf;
+}
+function buildXlsx(rows,numDateCols){
+  // Collect unique bg colors from cells
+  const bgSet=new Set();
+  rows.forEach(r=>r.forEach(c=>{if(c.bg)bgSet.add(c.bg.toLowerCase());}));
+  const bgList=[...bgSet];
+  // fills: 0=none,1=gray125,2=header bg,3=group bg,4+=dynamic
+  const fills=[
+    '<fill><patternFill patternType="none"/></fill>',
+    '<fill><patternFill patternType="gray125"/></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF4A5568"/></patternFill></fill>',
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFEDF2F7"/></patternFill></fill>',
+    ...bgList.map(c=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${c.slice(1).toUpperCase()}"/></patternFill></fill>`)
+  ];
+  // cellXfs: 0=normal,1=header,2=group,3+=dynamic bg
+  const xfs=[
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>',
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>',
+    '<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>',
+    ...bgList.map((_,i)=>`<xf numFmtId="0" fontId="0" fillId="${4+i}" borderId="0" xfId="0" applyFill="1"/>`)
+  ];
+  const cellSI=c=>{if(c.h)return 1;if(c.g)return 2;if(c.bg){const i=bgList.indexOf(c.bg.toLowerCase());return i>=0?i+3:0;}return 0;};
+  const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><sz val="11"/><b/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><sz val="11"/><b/><name val="Calibri"/></font></fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs></styleSheet>`;
+  const strs=[];const strMap={};
+  const si=v=>{v=String(v??'');if(!(v in strMap)){strMap[v]=strs.length;strs.push(v);}return strMap[v];};
+  rows.forEach(r=>r.forEach(c=>{if(!c.n)si(c.v??'');}));
+  const ssXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strs.length}" uniqueCount="${strs.length}">${strs.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}</sst>`;
+  const colL=i=>{let s='';i++;while(i>0){s=String.fromCharCode(64+(i%26||26))+s;i=Math.floor((i-1)/26);}return s;};
+  const dcW=S.viewMode==='week'?5:3.5;
+  const ndc=numDateCols||0;const dataEnd=10;
+  let colsXml=`<cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="2" width="10" customWidth="1"/><col min="3" max="3" width="8" customWidth="1"/><col min="4" max="6" width="14" customWidth="1"/><col min="7" max="7" width="10" customWidth="1"/><col min="8" max="9" width="12" customWidth="1"/><col min="10" max="10" width="10" customWidth="1"/>`;
+  if(ndc>0)colsXml+=`<col min="${dataEnd+1}" max="${dataEnd+ndc}" width="${dcW}" customWidth="1"/>`;
+  colsXml+='</cols>';
+  let shXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${colsXml}<sheetData>`;
+  rows.forEach((row,ri)=>{
+    shXml+=`<row r="${ri+1}">`;
+    row.forEach((cell,ci)=>{
+      const ref=colL(ci)+(ri+1);
+      const si_=cellSI(cell);
+      const s=si_?` s="${si_}"`:'';
+      if(cell.bg&&!cell.v){shXml+=`<c r="${ref}"${s}/>`;return;}
+      if(cell.n&&cell.v!==''&&cell.v!=null)shXml+=`<c r="${ref}"${s}><v>${cell.v}</v></c>`;
+      else shXml+=`<c r="${ref}" t="s"${s}><v>${si(cell.v??'')}</v></c>`;
+    });
+    shXml+='</row>';
+  });
+  shXml+='</sheetData></worksheet>';
+  const ctXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const rrXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wbXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="WBS" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  const wrXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  return zipPack([['[Content_Types].xml',ctXml],['_rels/.rels',rrXml],['xl/workbook.xml',wbXml],['xl/_rels/workbook.xml.rels',wrXml],['xl/worksheets/sheet1.xml',shXml],['xl/sharedStrings.xml',ssXml],['xl/styles.xml',stylesXml]]);
+}
+function exportXlsx(){
+  const dates=getDates();
+  const rows=[];
+  const H=v=>({v,h:1});const G=v=>({v,g:1});const T=v=>({v});const N=v=>({v,n:1});
+  const dLabel=d=>S.viewMode==='week'?`${d.getMonth()+1}/${d.getDate()}주`:`${d.getMonth()+1}/${d.getDate()}`;
+  const ganttCell=(d,ts,te,gColor,isDone)=>{
+    const we=d.getDay()===0||d.getDay()===6;
+    const hn=holName(d);
+    const inBar=ts&&te&&cellInRange(d,ts,te);
+    if(inBar&&hn)return{v:'',bg:blendHexOn(gColor,isDone?0.12:0.28,'#eceef0')};
+    if(inBar)return{v:'',bg:isDone?blendHexOn(gColor,0.22,'#ffffff'):we?blendHexOn(gColor,0.45,'#ffffff'):gColor};
+    if(hn)return{v:'',bg:'#eceef0'};
+    return{v:''};
+  };
+  rows.push([H('업무명'),H('담당자'),H('MD'),H('시작일'),H('예상종료일'),H('실종료일'),H('상태'),H('예상진척(%)'),H('실진척률(%)'),H('진척상태'),...dates.map(d=>H(dLabel(d)))]);
+  S.groups.forEach(g=>{
+    const validS=g.tasks.map(t=>t.startDate).filter(Boolean).sort();
+    const validEE=g.tasks.map(t=>t.expectedEndDate).filter(Boolean).sort();
+    const validAE=g.tasks.map(t=>t.actualEndDate).filter(Boolean).sort();
+    const totalMd=g.tasks.reduce((a,t)=>a+(Number(t.md)||1),0);
+    const aggExp=Math.round(g.tasks.reduce((a,t)=>{const ep=t.startDate&&t.expectedEndDate?(calcExpectedProgress(t)??0):0;return a+ep*(Number(t.md)||1);},0)/totalMd);
+    const aggAct=Math.round(g.tasks.reduce((a,t)=>{const done=t.status==='완료';const ap=done?(t.actualProgress??100):(t.actualProgress??0);return a+ap*(Number(t.md)||1);},0)/totalMd);
+    const gTs=validS[0]?parse(validS[0]):null;
+    const gTe=validEE.length?parse(validEE[validEE.length-1]):null;
+    const gGantt=dates.map(d=>ganttCell(d,gTs,gTe,g.color,false));
+    rows.push([G(`▶ ${g.name}`),G(''),G(totalMd||''),G(validS[0]||''),G(validEE.length?validEE[validEE.length-1]:''),G(validAE.length?validAE[validAE.length-1]:''),G(''),G(aggExp),G(aggAct),G(''),...gGantt]);
+    g.tasks.forEach(t=>{
+      const ep=calcExpectedProgress(t);
+      const ss=scheduleStatus(ep,t.actualProgress,t.status);
+      const ssText=ss==='normal'?'정상':ss==='warn'?'주의':ss==='delay'?'지연':'';
+      const isDone=t.status==='완료';
+      const ts=t.startDate?parse(t.startDate):null;
+      const te=t.expectedEndDate?parse(t.expectedEndDate):null;
+      const tGantt=dates.map(d=>ganttCell(d,ts,te,g.color,isDone));
+      rows.push([T(`  ${t.name||''}`),T(t.assignee||''),N(t.md||''),T(t.startDate||''),T(t.expectedEndDate||''),T(t.actualEndDate||''),T(t.status||'대기'),ep!=null?N(ep):T(''),t.actualProgress!=null?N(t.actualProgress):T(''),T(ssText),...tGantt]);
+    });
+  });
+  const buf=buildXlsx(rows,dates.length);
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`${S.name||'WBS'}_${fmt(tod())}.xlsx`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════
+// Row reorder
+// ═══════════════════════════════════════
+function clearDropInd(){document.querySelectorAll('.drop-above,.drop-below').forEach(el=>el.classList.remove('drop-above','drop-below'));}
+function attachRowDrop(tr,onDrop){
+  tr.addEventListener('dragover',e=>{if(!rd.active)return;e.preventDefault();e.dataTransfer.dropEffect='move';clearDropInd();const rect=tr.getBoundingClientRect();tr.classList.add(e.clientY<rect.top+rect.height/2?'drop-above':'drop-below');});
+  tr.addEventListener('dragleave',e=>{if(!tr.contains(e.relatedTarget))clearDropInd();});
+  tr.addEventListener('drop',e=>{e.preventDefault();const below=tr.classList.contains('drop-below');clearDropInd();if(!rd.active)return;onDrop(below);});
+}
+function moveTask(srcGid,srcTid,dstGid,dstTid,after){
+  const sg=findGroup(srcGid),dg=findGroup(dstGid);if(!sg||!dg)return;
+  const si=sg.tasks.findIndex(t=>t.id===srcTid);if(si===-1)return;
+  const task=sg.tasks.splice(si,1)[0];
+  if(dstTid){let di=dg.tasks.findIndex(t=>t.id===dstTid);if(di===-1)di=dg.tasks.length;else if(after)di++;dg.tasks.splice(di,0,task);}
+  else dg.tasks.push(task);
+}
+function moveGroup(srcGid,dstGid,after){
+  const si=S.groups.findIndex(g=>g.id===srcGid);let di=S.groups.findIndex(g=>g.id===dstGid);
+  if(si===-1||di===-1||si===di)return;
+  const grp=S.groups.splice(si,1)[0];
+  di=S.groups.findIndex(g=>g.id===dstGid);S.groups.splice(after?di+1:di,0,grp);
+}
+document.addEventListener('dragend',()=>{rd.active=false;if(rd.srcTr)rd.srcTr.classList.remove('row-dragging');clearDropInd();});
+
+// ═══════════════════════════════════════
+// Inline editing
+// ═══════════════════════════════════════
+function applyZoom(){
+  document.getElementById('gw').style.zoom=zoomLevel/100;
+  document.getElementById('zoomLabel').textContent=zoomLevel+'%';
+  try{localStorage.setItem('wbs_zoom',zoomLevel);}catch(e){}
+}
+function adjustZoom(delta){
+  zoomLevel=Math.min(150,Math.max(50,zoomLevel+delta));
+  applyZoom();
+}
+function toggleLock(){
+  locked=!locked;
+  document.body.classList.toggle('locked',locked);
+  const btn=document.getElementById('lockBtn');
+  btn.textContent=locked?'🔒 차트잠금':'🔓 편집중';
+  btn.style.color=locked?'#dc3545':'';
+  btn.style.borderColor=locked?'#dc3545':'';
+}
+function startEdit(td,type,rawVal,onSave){
+  if(td._editing)return;td._editing=true;
+  const input=document.createElement('input');input.type=type;input.value=rawVal||'';input.className='cell-input';
+  td.innerHTML='';td.appendChild(input);input.focus();
+  if(type==='date'){try{input.showPicker();}catch(e){}input.addEventListener('change',()=>input.blur());}
+  else if(type!=='url')input.select();
+  let esc_=false;
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){esc_=true;e.preventDefault();input.blur();}});
+  input.addEventListener('blur',()=>{td._editing=false;if(esc_){render();return;}onSave(input.value||null);});
+}
+
+// ═══════════════════════════════════════
+// View control
+// ═══════════════════════════════════════
+function setView(m){S.viewMode=m;document.getElementById('bd').classList.toggle('active',m==='day');document.getElementById('bw').classList.toggle('active',m==='week');save();render();}
+function shift(dir){const d=parse(S.viewStart);S.viewStart=S.viewMode==='day'?fmt(addD(d,dir*14)):fmt(addD(d,dir*56));save();render();}
+function goToday(){S.viewStart=fmt(addD(tod(),-7));save();render();}
+function getRef(){return refDate||tod();}
+function setRefDate(v){
+  refDate=v?parse(v):null;
+  document.getElementById('refDateInput').style.borderColor=refDate?'var(--primary)':'';
+  render();
+}
+function clearRefDate(){
+  refDate=tod();
+  const rdi=document.getElementById('refDateInput');
+  rdi.value=fmt(tod());rdi.style.borderColor='var(--primary)';
+  render();
+}
+function getDates(){
+  const start=parse(S.viewStart);
+  if(S.viewMode==='day')return Array.from({length:180},(_,i)=>addD(start,i));
+  // 주 보기: 프로젝트 기간 설정 시 전체 범위, 미설정 시 52주
+  if(S.projectStart&&S.projectEnd){
+    const ps=monOf(parse(S.projectStart));
+    const pe=parse(S.projectEnd);
+    const weeks=Math.min(Math.max(1,Math.ceil(diff(ps,pe)/7)+2),270); // 최대 5년여
+    return Array.from({length:weeks},(_,i)=>addD(ps,i*7));
+  }
+  return Array.from({length:52},(_,i)=>addD(monOf(start),i*7));
+}
+
+// ═══════════════════════════════════════
+// Gantt cell appearance
+// ═══════════════════════════════════════
+function cellStyle(d,ts,te,gColor,isDone){
+  const we=d.getDay()===0||d.getDay()===6,tod_=same(d,tod()),ref_=refDate&&same(d,refDate);
+  const hn=S.viewMode==='day'?holName(d):null;
+  const inBar=cellInRange(d,ts,te);
+  let bg='',cls='dc',opacity='1',title=hn||'';
+  if(inBar&&hn){
+    // 휴일은 열 전체를 회색으로 유지하되 바는 흐리게 위에 올림
+    const a=isDone?0.12:0.28;
+    bg=`linear-gradient(${hex2rgba(gColor,a)},${hex2rgba(gColor,a)}),#eceef0`;
+    cls='dc hol';
+  } else if(inBar){
+    bg=gColor;
+    if(isDone)opacity='.22';
+    else if(we)opacity='.45';
+  } else if(tod_){cls='dc tod';}
+  else if(hn){cls='dc hol';}
+  else if(we){cls='dc we';}
+  const ms=getMilestone(d);
+  const borderLeft=ref_?'2px solid #e63946':(ms?`2px solid ${ms.color}`:'');
+  return{bg,cls,opacity,title,borderLeft};
+}
+
+// ═══════════════════════════════════════
+// Render
+// ═══════════════════════════════════════
+function render(){
+  if(!S)return;
+  const dates=getDates(),T=tod(),CW=S.viewMode==='day'?32:52;
+  const head=document.getElementById('gh'),body=document.getElementById('gb');
+  const DOW=['일','월','화','수','목','금','토'];
+  head.innerHTML='';
+
+  // 프로젝트 전체 요약 (h-day 행에 통합)
+  const allTasks=S.groups.flatMap(g=>g.tasks);
+  const projMdTotal=allTasks.reduce((a,t)=>a+(Number(t.md)||0),0);
+  const projMdW=allTasks.reduce((a,t)=>a+(Number(t.md)||1),0);
+  const projStarts=allTasks.map(t=>t.startDate).filter(Boolean).sort();
+  const projEnds=allTasks.map(t=>t.expectedEndDate).filter(Boolean).sort();
+  const projMinStart=projStarts.length?parse(projStarts[0]):null;
+  const projMaxEnd=projEnds.length?parse(projEnds[projEnds.length-1]):null;
+  const projAggExp=allTasks.length?Math.round(allTasks.reduce((a,t)=>{
+    const ep=t.startDate&&t.expectedEndDate?(calcExpectedProgress(t)??0):0;
+    return a+ep*(Number(t.md)||1);
+  },0)/projMdW):null;
+  const projAggAct=allTasks.length?Math.round(allTasks.reduce((a,t)=>{
+    const done=t.status==='완료';
+    return a+(done?(t.actualProgress??100):(t.actualProgress??0))*(Number(t.md)||1);
+  },0)/projMdW):null;
+  const projSt=scheduleStatus(projAggExp,projAggAct,'진행중');
+
+  // Header row 1: month
+  const r1=head.insertRow();r1.className='h-month';
+  {const th=document.createElement('th');th.className='sdh';r1.appendChild(th);}
+  LCOLS.forEach(([sc,lbl,left,,tip])=>{
+    const th=document.createElement('th');
+    th.className=sc;th.style.left=left+'px';th.style.textAlign='left';th.style.paddingLeft='6px';
+    th.textContent=lbl;if(tip)th.title=tip;
+    r1.appendChild(th);
+  });
+  let i=0;while(i<dates.length){
+    const m=dates[i].getMonth(),y=dates[i].getFullYear();let sp=0;
+    while(i+sp<dates.length&&dates[i+sp].getMonth()===m&&dates[i+sp].getFullYear()===y)sp++;
+    const th=document.createElement('th');th.colSpan=sp;th.textContent=`${y}년 ${m+1}월`;r1.appendChild(th);i+=sp;
+  }
+
+  // Header row 2: days
+  const r2=head.insertRow();r2.className='h-day';
+  {const th=document.createElement('th');th.className='sdh';r2.appendChild(th);}
+  LCOLS.forEach(([sc,,left,,tip])=>{
+    const th=document.createElement('th');th.className=sc;th.style.left=left+'px';if(tip)th.title=tip;
+    const vs='font-size:11px;font-weight:600;opacity:.95';
+    if(sc==='s0')th.innerHTML=`<span style="${vs};padding-left:8px">전체</span>`;
+    else if(sc==='s3'&&projMdTotal)th.innerHTML=`<span style="${vs}">${projMdTotal}</span>`;
+    else if(sc==='s4'&&projMinStart)th.innerHTML=`<span style="${vs}">${sdf(projMinStart)}</span>`;
+    else if(sc==='s5'&&projMaxEnd)th.innerHTML=`<span style="${vs}">${sdf(projMaxEnd)}</span>`;
+    else if(sc==='s8'&&projAggExp!=null)th.innerHTML=`<span style="${vs}">${projAggExp}%</span>`;
+    else if(sc==='s9'&&projAggAct!=null)th.innerHTML=`<span style="${vs}">${projAggAct}%</span>`;
+    else if(sc==='s10'&&projSt)th.innerHTML=STATUS_BADGE[projSt];
+    r2.appendChild(th);
+  });
+  dates.forEach(d=>{
+    const th=document.createElement('th');
+    const we=d.getDay()===0||d.getDay()===6,tod_=same(d,T),ref_=refDate&&same(d,refDate),hn=S.viewMode==='day'?holName(d):null;
+    const ms=getMilestone(d);
+    th.className=ref_?'th-ref':(tod_?'th-tod':(hn?'th-hol':(we?'th-we':'')));
+    const titleParts=[];if(ms)titleParts.push(ms.name||'이벤트');if(hn)titleParts.push(hn);
+    if(titleParts.length)th.title=titleParts.join(' / ');
+    if(ms&&!ref_)th.style.borderLeft=`2px solid ${ms.color}`;
+    th.style.width=th.style.minWidth=CW+'px';
+    th.innerHTML=S.viewMode==='day'
+      ?`<div>${d.getDate()}</div><div style="font-size:9px;opacity:.7">${DOW[d.getDay()]}</div>`
+      :`<div style="font-size:10px">${d.getMonth()+1}/${d.getDate()}</div><div style="font-size:9px;opacity:.7">W</div>`;
+    r2.appendChild(th);
+  });
+
+  body.innerHTML='';
+
+  if(!S.groups.length){
+    const tr=body.insertRow(),td=tr.insertCell();
+    td.colSpan=LCOLS.length+dates.length;
+    td.style.cssText='text-align:center;padding:60px 20px;color:var(--muted)';
+    td.innerHTML='그룹을 추가해 WBS를 시작하세요.<br><br><button class="btn btn-primary" onclick="openGM()">+ 그룹 추가</button>';
+    return;
+  }
+
+  S.groups.forEach(g=>{
+    const gbg=hex2rgba(g.color,.07);const gbgS=blendColor(g.color,.07);
+    const validS=g.tasks.map(t=>t.startDate).filter(Boolean).sort();
+    const validEE=g.tasks.map(t=>t.expectedEndDate).filter(Boolean).sort();
+    const validAE=g.tasks.map(t=>t.actualEndDate).filter(Boolean).sort();
+    const totalMd=g.tasks.reduce((acc,t)=>acc+(Number(t.md)||0),0);
+
+    // Group row
+    const gr=body.insertRow();gr.className='g-row';gr.dataset.gid=g.id;
+    const gdhc=gr.insertCell();gdhc.className='sdh';gdhc.style.background=gbgS;
+    const gdh=document.createElement('span');gdh.className='dh';gdh.textContent='⠿';gdh.draggable=true;
+    gdhc.appendChild(gdh);
+    gdh.addEventListener('dragstart',e=>{
+      rd.active=true;rd.type='group';rd.srcGid=g.id;rd.srcTr=gr;
+      e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',g.id);
+      setTimeout(()=>gr.classList.add('row-dragging'),0);
+    });
+    const gDiv=document.createElement('div');gDiv.className='nc';
+    const gDot=document.createElement('div');gDot.className='dot';gDot.style.background=g.color;
+    const gName=document.createElement('span');gName.className='nc-text';gName.textContent=g.name;
+    const gActs=document.createElement('div');gActs.className='nc-actions';
+    gActs.innerHTML=`<button class="ic" onclick="openTM('${g.id}')" title="업무 추가">＋</button><button class="ic" onclick="copyGroup('${g.id}')" title="그룹 복사">⊕</button><button class="ic" onclick="openGME('${g.id}')" title="그룹 편집">✏</button>`;
+    const gnc=gr.insertCell();gnc.className='s0';gnc.style.background=gbgS;
+    gDiv.append(gDot,gName,gActs);gnc.appendChild(gDiv);
+    attachRowDrop(gr,after=>{
+      if(rd.type==='group'){if(rd.srcGid!==g.id){moveGroup(rd.srcGid,g.id,after);save();render();}}
+      else if(rd.type==='task'){moveTask(rd.srcGid,rd.srcTid,g.id,null,false);save();render();}
+    });
+
+    // group: 링크(blank), MD, 시작일, 예상종료일, 실종료일, 상태(blank)
+    const glc=gr.insertCell();glc.className='s1';glc.style.background=gbgS;
+    const gasc=gr.insertCell();gasc.className='s2';gasc.style.background=gbgS;
+    const gmc=gr.insertCell();gmc.className='s3';gmc.style.background=gbgS;gmc.innerHTML=`<div class="cv muted">${totalMd||''}</div>`;
+    const gsc=gr.insertCell();gsc.className='s4';gsc.style.background=gbgS;gsc.innerHTML=`<div class="cv muted">${sdf(validS[0]?parse(validS[0]):null)}</div>`;
+    const gec=gr.insertCell();gec.className='s5';gec.style.background=gbgS;gec.innerHTML=`<div class="cv muted">${sdf(validEE.length?parse(validEE[validEE.length-1]):null)}</div>`;
+    const gac=gr.insertCell();gac.className='s6';gac.style.background=gbgS;gac.innerHTML=`<div class="cv muted">${sdf(validAE.length?parse(validAE[validAE.length-1]):null)}</div>`;
+    const gstc=gr.insertCell();gstc.className='s7';gstc.style.background=gbgS;
+    // group: aggregate expected% (weighted avg by MD), aggregate actual%
+    // MD 가중 평균: 업무가 있을 때만 계산, MD 미입력 시 1로 간주
+    let aggExp=null,aggAct=null;
+    if(g.tasks.length){
+      const totalMd=g.tasks.reduce((a,t)=>a+(Number(t.md)||1),0);
+      // 예상진척률: 순수 일정 기반, 완료 여부 무관
+      aggExp=Math.round(g.tasks.reduce((a,t)=>{
+        const ep=t.startDate&&t.expectedEndDate?(calcExpectedProgress(t)??0):0;
+        return a+ep*(Number(t.md)||1);
+      },0)/totalMd);
+      // 실진척률: 완료 업무는 100%(미입력 포함), 나머지 미입력은 0%
+      aggAct=Math.round(g.tasks.reduce((a,t)=>{
+        const done=t.status==='완료';
+        const ap=done?(t.actualProgress??100):(t.actualProgress??0);
+        return a+ap*(Number(t.md)||1);
+      },0)/totalMd);
+    }
+    const gep=gr.insertCell();gep.className='s8';gep.style.background=gbgS;
+    gep.innerHTML=aggExp!=null?`<div class="prog-val" style="font-size:11px;display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">${aggExp}%</div>`:'';
+    const gap2=gr.insertCell();gap2.className='s9';gap2.style.background=gbgS;
+    if(aggAct!=null){
+      gap2.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%"><span class="prog-val" style="font-size:11px;color:var(--muted)">${aggAct}%</span></div>`;
+    }
+    const gsc9=gr.insertCell();gsc9.className='s10';gsc9.style.background=gbgS;
+    if(aggExp!=null&&aggAct!=null){
+      const gst=scheduleStatus(aggExp,aggAct,'진행중');
+      if(gst)gsc9.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%">${STATUS_BADGE[gst]}</div>`;
+    }
+    dates.forEach(d=>{
+      const td=gr.insertCell();td.style.background=hex2rgba(g.color,.03);
+      const ref_=refDate&&same(d,refDate),ms=getMilestone(d);
+      if(ref_)td.style.borderLeft='2px solid #e63946';
+      else if(ms)td.style.borderLeft=`2px solid ${ms.color}`;
+    });
+
+    // Task rows
+    g.tasks.forEach(task=>{
+      const tr=body.insertRow();tr.className='t-row';tr.dataset.tid=task.id;
+      const tid=task.id,isDone=task.status==='완료';
+
+      const tdhc=tr.insertCell();tdhc.className='sdh';
+      const tdh=document.createElement('span');tdh.className='dh';tdh.textContent='⠿';tdh.draggable=true;
+      tdhc.appendChild(tdh);
+      tdh.addEventListener('dragstart',e=>{
+        rd.active=true;rd.type='task';rd.srcGid=g.id;rd.srcTid=tid;rd.srcTr=tr;
+        e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',tid);
+        setTimeout(()=>tr.classList.add('row-dragging'),0);
+      });
+      const tDiv=document.createElement('div');tDiv.className='nc';tDiv.style.paddingLeft='18px';
+      const tName=document.createElement('span');tName.className='nc-text';tName.title=task.name;tName.textContent=task.name;
+      const tActs=document.createElement('div');tActs.className='nc-actions';
+      tActs.innerHTML=`<button class="ic" style="color:#dc3545" onclick="event.stopPropagation();deleteTask('${tid}')" title="업무 삭제">🗑</button>`;
+      const tnc=tr.insertCell();tnc.className='s0';
+      tDiv.append(tName,tActs);tnc.appendChild(tDiv);
+      tName.addEventListener('click',()=>{startEdit(tnc,'text',task.name,v=>{const t=findTask(tid);if(v&&t){t.name=v;save();}render();});});
+      attachRowDrop(tr,after=>{if(rd.type==='task'&&rd.srcTid!==tid){moveTask(rd.srcGid,rd.srcTid,g.id,tid,after);save();render();}});
+
+      const tlc=tr.insertCell();tlc.className='s1';
+      if(task.link){
+        tlc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:2px;height:100%"><a href="${esc(task.link)}" target="_blank" style="color:var(--primary);font-size:13px;text-decoration:none;line-height:1" title="${esc(task.link)}" onclick="event.stopPropagation()">🔗</a></div>`;
+      }
+      tlc.style.cursor='pointer';
+      tlc.addEventListener('click',e=>{
+        if(e.target.closest('a'))return;
+        startEdit(tlc,'url',task.link||'',v=>{
+          const t=findTask(tid);if(!t)return;
+          t.link=v||null;save();render();
+        });
+      });
+
+      const tasc=tr.insertCell();tasc.className='s2';
+      tasc.innerHTML=`<div class="cv">${esc(task.assignee||'')}</div>`;
+      tasc.addEventListener('click',()=>{startEdit(tasc,'text',task.assignee||'',v=>{const t=findTask(tid);if(t){t.assignee=v||null;save();}render();});});
+
+      const tmc=tr.insertCell();tmc.className='s3';
+      tmc.innerHTML=`<div class="cv muted">${task.md!=null?task.md:''}</div>`;
+      tmc.addEventListener('click',()=>{startEdit(tmc,'number',task.md!=null?String(task.md):'',v=>{const t=findTask(tid);if(t){t.md=v!=null?Number(v):null;save();}render();});});
+
+      const tsc=tr.insertCell();tsc.className='s4';
+      tsc.innerHTML=`<div class="cv">${sdf(task.startDate?parse(task.startDate):null)}</div>`;
+      tsc.addEventListener('click',()=>{startEdit(tsc,'date',task.startDate||'',v=>{const t=findTask(tid);if(t){t.startDate=v||null;save();}render();});});
+
+      const tec=tr.insertCell();tec.className='s5';
+      tec.innerHTML=`<div class="cv">${sdf(task.expectedEndDate?parse(task.expectedEndDate):null)}</div>`;
+      tec.addEventListener('click',()=>{startEdit(tec,'date',task.expectedEndDate||'',v=>{const t=findTask(tid);if(t){t.expectedEndDate=v||null;save();}render();});});
+
+      const tac=tr.insertCell();tac.className='s6';
+      const taP=task.actualEndDate?parse(task.actualEndDate):null;
+      tac.innerHTML=`<div class="cv ${taP?'act':''}">${sdf(taP)}</div>`;
+      tac.addEventListener('click',()=>{startEdit(tac,'date',task.actualEndDate||'',v=>{const t=findTask(tid);if(t){t.actualEndDate=v||null;if(v)t.status='완료';save();}render();});});
+
+      // 상태 — click cycles 대기→진행중→완료→대기
+      const stc=tr.insertCell();stc.className='s7';stc.style.verticalAlign='middle';
+      const badge=document.createElement('span');
+      badge.className='st-badge '+(STATUS_CLASS[task.status||'대기']||'st-wait');
+      badge.textContent=task.status||'대기';badge.title='클릭하여 상태 변경';
+      badge.addEventListener('click',e=>{
+        e.stopPropagation();const t=findTask(tid);if(!t)return;
+        t.status=nextStatus(t.status);save();render();
+      });
+      stc.appendChild(badge);
+
+      // 예상진척률 (auto-calculated)
+      const epc=tr.insertCell();epc.className='s8';
+      const expPct=calcExpectedProgress(task);
+      epc.innerHTML=expPct!=null
+        ?`<div class="prog"><span class="prog-val" style="color:var(--muted)">${expPct}%</span><div class="prog-bar"><div class="prog-fill" style="width:${expPct}%;background:#94a3b8"></div></div></div>`
+        :'';
+
+      // 실진척률 (user-input, click to edit)
+      const apc=tr.insertCell();apc.className='s9';
+      const actPct=isDone?(task.actualProgress!=null?task.actualProgress:100):task.actualProgress;
+      apc.innerHTML=renderProgress(expPct,actPct,isDone,task.status);
+      apc.addEventListener('click',()=>{
+        const cur=task.actualProgress!=null?String(task.actualProgress):'';
+        startEdit(apc,'number',cur,v=>{
+          const t=findTask(tid);if(!t)return;
+          t.actualProgress=v!=null&&v!==''?Math.min(100,Math.max(0,parseInt(v)||0)):null;
+          save();render();
+        });
+      });
+
+      // 진척상태 (s10)
+      const ssc=tr.insertCell();ssc.className='s10';
+      const st9=scheduleStatus(expPct,actPct,task.status);
+      if(st9)ssc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%">${STATUS_BADGE[st9]}</div>`;
+
+      // Gantt cells
+      const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
+      dates.forEach(d=>{
+        const dc=tr.insertCell();
+        const{bg,cls,opacity,title,borderLeft}=cellStyle(d,ts,te,g.color,isDone);
+        dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderLeft=borderLeft||'';
+        if(title)dc.title=title;
+        dc.dataset.date=fmt(d);dc.dataset.tid=tid;
+        dc.style.width=dc.style.minWidth=CW+'px';
+        dc.addEventListener('mousedown',ev=>onMD(ev,tid,d),{passive:false});
+        dc.addEventListener('mouseenter',()=>onME(tid,d));
+      });
+    });
+
+  });
+}
+
+// ═══════════════════════════════════════
+// Gantt drag
+// ═══════════════════════════════════════
+function onMD(e,tid,d){
+  if(locked)return;e.preventDefault();const task=findTask(tid);if(!task)return;
+  drag.on=true;drag.tid=tid;
+  const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
+  if(ts&&te&&cellInRange(d,ts,te)){
+    drag.mode='move';drag.dur=diff(ts,te);
+    drag.offset=S.viewMode==='week'?Math.round(diff(monOf(ts),d)/7):diff(ts,d);
+  } else {
+    drag.mode='new';drag.anchor=new Date(d);
+    setDates(tid,d,S.viewMode==='week'?addD(d,6):d,true);
+  }
+}
+function onME(tid,d){
+  if(!drag.on||drag.tid!==tid)return;
+  if(drag.mode==='new'){const start=drag.anchor<=d?drag.anchor:d,end=drag.anchor<=d?d:drag.anchor;setDates(tid,start,S.viewMode==='week'?addD(end,6):end,true);}
+  else{const ns=S.viewMode==='week'?addD(d,-drag.offset*7):addD(d,-drag.offset);setDates(tid,ns,addD(ns,drag.dur),true);}
+}
+document.addEventListener('mouseup',()=>{if(drag.on){drag.on=false;save();render();}});
+
+function setDates(tid,start,end,noSave){
+  const task=findTask(tid);if(!task)return;
+  task.startDate=fmt(start);task.expectedEndDate=fmt(end);
+  if(!noSave)save();repaintTask(tid);
+}
+function repaintTask(tid){
+  const task=findTask(tid),group=groupOfTask(tid);if(!task||!group)return;
+  const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
+  const isDone=task.status==='완료';
+  document.querySelectorAll(`td[data-tid="${tid}"][data-date]`).forEach(dc=>{
+    const d=parse(dc.dataset.date);
+    const{bg,cls,opacity,title,borderLeft}=cellStyle(d,ts,te,group.color,isDone);
+    dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderLeft=borderLeft||'';
+    if(title)dc.title=title;else dc.removeAttribute('title');
+  });
+  const tr=document.querySelector(`tr[data-tid="${tid}"]`);if(!tr)return;
+  const sc=tr.querySelector('.s4'),ec=tr.querySelector('.s5');
+  if(sc&&!sc._editing)sc.innerHTML=`<div class="cv">${sdf(ts)}</div>`;
+  if(ec&&!ec._editing)ec.innerHTML=`<div class="cv">${sdf(te)}</div>`;
+}
+
+// ═══════════════════════════════════════
+// Group modal
+// ═══════════════════════════════════════
+function openGM(){
+  editGid=null;selColor=COLORS[0];
+  document.getElementById('gTitle').textContent='그룹 추가';
+  document.getElementById('gName').value='';document.getElementById('gDelBtn').style.display='none';
+  renderColors();document.getElementById('gModal').classList.add('show');
+  setTimeout(()=>document.getElementById('gName').focus(),50);
+}
+function openGME(gid){
+  editGid=gid;const g=findGroup(gid);if(!g)return;
+  selColor=g.color;document.getElementById('gTitle').textContent='그룹 편집';
+  document.getElementById('gName').value=g.name;document.getElementById('gDelBtn').style.display='';
+  renderColors();document.getElementById('gModal').classList.add('show');
+}
+function closeGM(){document.getElementById('gModal').classList.remove('show');}
+function renderColors(){
+  const grid=document.getElementById('colorGrid');grid.innerHTML='';
+  COLORS.forEach(c=>{const d=document.createElement('div');d.className='color-swatch'+(c===selColor?' sel':'');d.style.cssText=`background:${c};color:${c}`;d.onclick=()=>{selColor=c;renderColors();};grid.appendChild(d);});
+}
+function saveGroup(){
+  const name=document.getElementById('gName').value.trim();if(!name)return;
+  if(editGid){const g=findGroup(editGid);if(g){g.name=name;g.color=selColor;}}
+  else S.groups.push({id:uid(),name,color:selColor,tasks:[]});
+  save();closeGM();render();
+}
+function delGroup(){if(!confirm('그룹과 모든 업무를 삭제할까요?'))return;S.groups=S.groups.filter(g=>g.id!==editGid);save();closeGM();render();}
+function copyGroup(gid){
+  const src=findGroup(gid);if(!src)return;
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.id=uid();copy.name=src.name+' (복사)';
+  copy.tasks.forEach(t=>t.id=uid());
+  const idx=S.groups.findIndex(g=>g.id===gid);
+  S.groups.splice(idx+1,0,copy);
+  save();render();
+}
+document.getElementById('gName').addEventListener('keydown',e=>{if(e.key==='Enter')saveGroup();});
+document.getElementById('gModal').addEventListener('click',function(e){if(e.target===this)closeGM();});
+
+// ═══════════════════════════════════════
+// Task modal
+// ═══════════════════════════════════════
+function openTM(gid){
+  const g=findGroup(gid);if(!g)return;
+  const newTask={id:uid(),name:'',md:null,startDate:null,expectedEndDate:null,actualEndDate:null,link:null,status:'대기',actualProgress:null};
+  g.tasks.push(newTask);
+  save();render();
+  const tr=document.querySelector(`tr[data-tid="${newTask.id}"]`);if(!tr)return;
+  tr.scrollIntoView({block:'nearest'});
+  const tnc=tr.querySelector('.s0');if(!tnc)return;
+  startEdit(tnc,'text','',v=>{
+    const t=findTask(newTask.id);if(!t)return;
+    if(v){t.name=v;save();}
+    else{const grp=groupOfTask(newTask.id);if(grp)grp.tasks=grp.tasks.filter(t2=>t2.id!==newTask.id);save();}
+    render();
+  });
+}
+function openTME(tid){
+  editTid=tid;const task=findTask(tid);if(!task)return;
+  document.getElementById('tTitle').textContent='업무 편집';
+  document.getElementById('tName').value=task.name||'';
+  document.getElementById('tMd').value=task.md!=null?task.md:'';
+  document.getElementById('tS').value=task.startDate||'';
+  document.getElementById('tEE').value=task.expectedEndDate||'';
+  document.getElementById('tAE').value=task.actualEndDate||'';
+  document.getElementById('tLink').value=task.link||'';
+  document.getElementById('tDelBtn').style.display='';
+  document.getElementById('tModal').classList.add('show');
+}
+function closeTM(){document.getElementById('tModal').classList.remove('show');}
+function saveTask(){
+  const name=document.getElementById('tName').value.trim();if(!name)return;
+  const md=document.getElementById('tMd').value;
+  const startDate=document.getElementById('tS').value||null;
+  const expectedEndDate=document.getElementById('tEE').value||null;
+  const actualEndDate=document.getElementById('tAE').value||null;
+  const link=document.getElementById('tLink').value.trim()||null;
+  if(editTid){
+    const t=findTask(editTid);
+    if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;if(actualEndDate)t.status='완료';}
+  } else {
+    const g=findGroup(editGidForT);
+    if(g)g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:'대기',actualProgress:null});
+  }
+  save();closeTM();render();
+}
+function delTask(){if(!confirm('업무를 삭제할까요?'))return;S.groups.forEach(g=>{g.tasks=g.tasks.filter(t=>t.id!==editTid);});save();closeTM();render();}
+function deleteTask(tid){
+  const t=findTask(tid);if(!t)return;
+  if(!confirm(`'${t.name||'(이름 없음)'}'을(를) 삭제할까요?`))return;
+  S.groups.forEach(g=>{g.tasks=g.tasks.filter(t2=>t2.id!==tid);});
+  save();render();
+}
+document.getElementById('tName').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
+document.getElementById('tModal').addEventListener('click',function(e){if(e.target===this)closeTM();});
+
+init();
+</script>
+</body>
+</html>
