@@ -273,7 +273,7 @@ body.share-mode .cv:hover{background:none}
 <!-- Login Overlay -->
 <div id="toast"></div>
 <div id="shareBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#4361ee;color:#fff;font-size:12px;padding:7px 16px;align-items:center;gap:10px;justify-content:center">
-  👁 읽기 전용으로 공유된 프로젝트입니다.
+  👁 <strong id="shareProjectName" style="font-weight:700"></strong> <span style="opacity:.75">· 읽기 전용</span>
   <button onclick="location.href=location.pathname" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">내 계정으로 이동 →</button>
 </div>
 <div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#4361ee,#3a0ca3);z-index:500;align-items:center;justify-content:center">
@@ -723,6 +723,7 @@ function loadShareMode(shareId){
       APP={projects:[p],activeId:p.id};
       document.getElementById('loginOverlay').style.display='none';
       document.getElementById('shareBanner').style.display='flex';
+      document.getElementById('shareProjectName').textContent=p.name||'공유 프로젝트';
       document.querySelector('header').style.marginTop='36px';
       ['projWrap','refDateGroup','sepRefDate','sepButtons','newGroupBtn','projSettBtn','lockBtn','lockSep','userAvatar','userName','logoutBtn']
         .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
