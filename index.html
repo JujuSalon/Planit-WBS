@@ -353,10 +353,12 @@ body.share-mode .dc{pointer-events:none!important}
 <!-- Request Modal (viewer) -->
 <div class="overlay" id="reqModal">
   <div class="modal" style="width:360px">
-    <h2>업데이트 요청</h2>
+    <h2 id="reqModalTitle">업데이트 요청</h2>
     <p class="sub" id="reqTaskName"></p>
     <input type="hidden" id="reqTaskId">
-    <div class="fg"><label>실진척률 (%)</label><input type="number" id="reqProgress" min="0" max="100" placeholder="0 ~ 100"/></div>
+    <input type="hidden" id="reqType">
+    <div class="fg" id="reqProgressFg"><label>실진척률 (%)</label><input type="number" id="reqProgress" min="0" max="100" placeholder="0 ~ 100"/></div>
+    <div class="fg" id="reqEndDateFg" style="display:none"><label>실종료일</label><input type="date" id="reqEndDate"/></div>
     <div class="fg"><label>요청자</label><input type="text" id="reqRequester" placeholder="이름을 입력해주세요"/></div>
     <div class="mf">
       <button class="btn" onclick="closeReqModal()">취소</button>
@@ -461,25 +463,40 @@ function signOutGoogle(){
 }
 
 // ── 업데이트 요청 (뷰어) ──────────────────────
-function openReqModal(tid,taskName,currentProgress){
+function openReqModal(tid,taskName,type,currentVal){
   document.getElementById('reqTaskId').value=tid;
+  document.getElementById('reqType').value=type;
   document.getElementById('reqTaskName').textContent=taskName;
-  document.getElementById('reqProgress').value=currentProgress!=null?currentProgress:'';
   document.getElementById('reqRequester').value='';
+  const isProgress=type==='progress';
+  document.getElementById('reqModalTitle').textContent=isProgress?'실진척률 업데이트 요청':'실종료일 업데이트 요청';
+  document.getElementById('reqProgressFg').style.display=isProgress?'':'none';
+  document.getElementById('reqEndDateFg').style.display=isProgress?'none':'';
+  if(isProgress){document.getElementById('reqProgress').value=currentVal!=null?currentVal:'';}
+  else{document.getElementById('reqEndDate').value=currentVal||'';}
   document.getElementById('reqModal').classList.add('show');
-  setTimeout(()=>document.getElementById('reqProgress').focus(),100);
+  setTimeout(()=>document.getElementById(isProgress?'reqProgress':'reqEndDate').focus(),100);
 }
 function closeReqModal(){document.getElementById('reqModal').classList.remove('show');}
 document.getElementById('reqModal').addEventListener('click',function(e){if(e.target===this)closeReqModal();});
 async function submitRequest(){
   const tid=document.getElementById('reqTaskId').value;
-  const progress=parseInt(document.getElementById('reqProgress').value);
+  const type=document.getElementById('reqType').value;
   const requester=document.getElementById('reqRequester').value.trim();
-  if(isNaN(progress)||document.getElementById('reqProgress').value===''||progress<0||progress>100){alert('실진척률을 0~100 사이로 입력해주세요.');document.getElementById('reqProgress').focus();return;}
-  if(!requester){alert('요청자를 입력해주세요.');document.getElementById('reqRequester').focus();return;}
   const task=findTask(tid);
+  let payload={shareId:_shareId,taskId:tid,taskName:task?task.name:'',type,requester,requestedAt:Date.now(),status:'pending'};
+  if(type==='progress'){
+    const progress=parseInt(document.getElementById('reqProgress').value);
+    if(isNaN(progress)||document.getElementById('reqProgress').value===''||progress<0||progress>100){alert('실진척률을 0~100 사이로 입력해주세요.');document.getElementById('reqProgress').focus();return;}
+    payload.requestedProgress=progress;
+  }else{
+    const endDate=document.getElementById('reqEndDate').value;
+    if(!endDate){alert('실종료일을 입력해주세요.');document.getElementById('reqEndDate').focus();return;}
+    payload.requestedEndDate=endDate;
+  }
+  if(!requester){alert('요청자를 입력해주세요.');document.getElementById('reqRequester').focus();return;}
   try{
-    await db.collection('requests').add({shareId:_shareId,taskId:tid,taskName:task?task.name:'',requestedProgress:progress,requester,requestedAt:Date.now(),status:'pending'});
+    await db.collection('requests').add(payload);
     closeReqModal();showToast('✓ 요청이 전송됐습니다');
   }catch(e){alert('요청 실패: '+e.message);}
 }
@@ -522,16 +539,24 @@ function renderReqPanel(){
   const list=document.getElementById('reqPanelList');
   document.getElementById('reqCount').textContent=pendingRequests.length?`(${pendingRequests.length})` :'';
   if(!pendingRequests.length){list.innerHTML='<p style="color:var(--muted);font-size:12px;padding:16px 0;text-align:center">대기 중인 요청이 없습니다.</p>';return;}
-  list.innerHTML=pendingRequests.map(r=>`
-    <div class="req-item">
-      <div class="req-item-name">${esc(r.taskName)}</div>
-      <div class="req-item-meta">실진척률 → <strong style="color:var(--text)">${r.requestedProgress}%</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
+  list.innerHTML=pendingRequests.map(r=>{
+    const isED=r.type==='endDate';
+    const typeLabel=isED?'실종료일':'실진척률';
+    const valLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
+    const approveFn=isED?`approveEndDateRequest('${r.id}','${r.taskId}','${r.requestedEndDate||''}')`:`approveRequest('${r.id}','${r.taskId}',${r.requestedProgress})`;
+    return`<div class="req-item">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span class="req-item-name" style="margin:0">${esc(r.taskName)}</span>
+        <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:${isED?'#f0e6ff':'#e8f0ff'};color:${isED?'#7209b7':'#4361ee'}">${typeLabel}</span>
+      </div>
+      <div class="req-item-meta">${typeLabel} → <strong style="color:var(--text)">${valLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${fmtTs(r.requestedAt)}</div>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-primary btn-sm" onclick="approveRequest('${r.id}','${r.taskId}',${r.requestedProgress})">승인</button>
+        <button class="btn btn-primary btn-sm" onclick="${approveFn}">승인</button>
         <button class="btn btn-sm" onclick="rejectRequest('${r.id}')">거절</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 let _historyOpen=false;
 async function toggleReqHistory(){
@@ -556,15 +581,22 @@ async function loadReqHistory(){
     // 오래된 항목 정리
     snap.docs.filter(d=>d.data().requestedAt<TWO_WEEKS).forEach(d=>d.ref.delete().catch(()=>{}));
     if(!rows.length){hlist.innerHTML='<p style="font-size:12px;color:var(--muted);padding:8px 0;text-align:center">처리된 요청이 없습니다.</p>';return;}
-    hlist.innerHTML=rows.map(r=>`
-      <div class="req-item" style="opacity:.85">
+    hlist.innerHTML=rows.map(r=>{
+      const isED=r.type==='endDate';
+      const typeLabel=isED?'실종료일':'실진척률';
+      const valLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
+      return`<div class="req-item" style="opacity:.85">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span class="req-item-name" style="margin:0">${esc(r.taskName)}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="req-item-name" style="margin:0">${esc(r.taskName)}</span>
+            <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:${isED?'#f0e6ff':'#e8f0ff'};color:${isED?'#7209b7':'#4361ee'}">${typeLabel}</span>
+          </div>
           <span style="font-size:11px;font-weight:700;color:${r.status==='approved'?'#06d6a0':'#e63946'}">${r.status==='approved'?'승인':'거절'}</span>
         </div>
-        <div class="req-item-meta">실진척률 → <strong style="color:var(--text)">${r.requestedProgress}%</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
+        <div class="req-item-meta">${typeLabel} → <strong style="color:var(--text)">${valLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
         <div style="font-size:11px;color:var(--muted)">${fmtTs(r.requestedAt)}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }catch(e){hlist.innerHTML=`<p style="font-size:12px;color:#e63946">불러오기 실패: ${e.message}</p>`;}
 }
 async function approveRequest(reqId,taskId,progress){
@@ -572,9 +604,16 @@ async function approveRequest(reqId,taskId,progress){
   task.actualProgress=progress;
   APP._savedAt=Date.now();
   try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
-  clearTimeout(saveTimer);
-  saveToFirestore();
-  render();
+  clearTimeout(saveTimer);saveToFirestore();render();
+  await db.collection('requests').doc(reqId).update({status:'approved'}).catch(e=>console.error(e));
+}
+async function approveEndDateRequest(reqId,taskId,endDate){
+  const task=findTask(taskId);if(!task){alert('업무를 찾을 수 없습니다.');return;}
+  task.actualEndDate=endDate||null;
+  if(endDate)task.status='완료';
+  APP._savedAt=Date.now();
+  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
+  clearTimeout(saveTimer);saveToFirestore();render();
   await db.collection('requests').doc(reqId).update({status:'approved'}).catch(e=>console.error(e));
 }
 async function rejectRequest(reqId){
@@ -1510,8 +1549,18 @@ function render(){
 
       const tac=tr.insertCell();tac.className='s6';
       const taP=task.actualEndDate?parse(task.actualEndDate):null;
-      tac.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
-      tac.addEventListener('click',()=>{startEdit(tac,'date',task.actualEndDate||'',v=>{const t=findTask(tid);if(t){t.actualEndDate=v||null;if(v)t.status='완료';save();}render();});});
+      if(shareMode){
+        tac.classList.add('req-cell');
+        const aedProg=document.createElement('div');aedProg.className='req-prog';
+        aedProg.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
+        tac.appendChild(aedProg);
+        const aedBtn=document.createElement('button');aedBtn.className='req-btn-send';aedBtn.textContent='요청';aedBtn.title='실종료일 업데이트 요청';
+        aedBtn.onclick=e=>{e.stopPropagation();openReqModal(tid,task.name,'endDate',task.actualEndDate);};
+        tac.appendChild(aedBtn);
+      }else{
+        tac.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
+        tac.addEventListener('click',()=>{startEdit(tac,'date',task.actualEndDate||'',v=>{const t=findTask(tid);if(t){t.actualEndDate=v||null;if(v)t.status='완료';save();}render();});});
+      }
 
       // 상태 — click cycles 대기→진행중→완료→대기
       const stc=tr.insertCell();stc.className='s7';stc.style.verticalAlign='middle';
@@ -1540,7 +1589,7 @@ function render(){
         progWrap.innerHTML=renderProgress(expPct,actPct,isDone,task.status);
         apc.appendChild(progWrap);
         const rb=document.createElement('button');rb.className='req-btn-send';rb.textContent='요청';rb.title='진척률 업데이트 요청';
-        rb.onclick=e=>{e.stopPropagation();openReqModal(tid,task.name,task.actualProgress);};
+        rb.onclick=e=>{e.stopPropagation();openReqModal(tid,task.name,'progress',task.actualProgress);};
         apc.appendChild(rb);
       }else{
         apc.innerHTML=renderProgress(expPct,actPct,isDone,task.status);
