@@ -249,8 +249,7 @@ body.locked .dc:hover{filter:none}
     <button class="btn" id="lockBtn" onclick="toggleLock()" title="차트 영역 잠금/해제">🔓 편집중</button>
     <div class="sep"></div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <button class="btn btn-primary" id="saveBtn" onclick="manualSave()" style="display:none">💾 저장</button>
-      <img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
+<img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
       <span id="userName" style="font-size:11px;color:var(--muted);white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis"></span>
       <button class="btn" onclick="signOutGoogle()" id="logoutBtn" style="display:none">로그아웃</button>
     </div>
@@ -292,13 +291,13 @@ body.locked .dc:hover{filter:none}
     <p style="font-size:11px;color:var(--muted);margin-top:-6px">※ 일 보기는 90일 창으로 ◀/▶ 탐색, 주 보기는 설정 기간 전체 표시</p>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
       <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">마감일 / 이벤트</label>
-      <div class="ms-list" id="msList"></div>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
         <input type="date" id="msDate" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;font-family:inherit;flex-shrink:0"/>
         <input type="text" id="msName" placeholder="예: 출시일, 검수 마감" style="flex:1;min-width:100px;padding:6px 8px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;font-family:inherit"/>
         <div id="msColorPicker" style="display:flex;gap:4px;align-items:center;flex-shrink:0"></div>
         <button class="btn btn-primary btn-sm" onclick="addMilestone()" style="flex-shrink:0">추가</button>
       </div>
+      <div class="ms-list" id="msList"></div>
     </div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
       <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">휴일 관리</label>
@@ -390,19 +389,6 @@ function signInGoogle(){
 function signOutGoogle(){
   if(!confirm('로그아웃 하시겠습니까?'))return;
   auth.signOut();
-}
-function manualSave(){
-  if(!currentUser)return;
-  clearTimeout(saveTimer);
-  APP._savedAt=Date.now();
-  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
-  const btn=document.getElementById('saveBtn');
-  btn.innerHTML='저장 중...';btn.disabled=true;
-  const reset=()=>{btn.innerHTML='💾 저장';btn.disabled=false;};
-  const t=setTimeout(()=>{reset();alert('저장 시간이 초과됐습니다. 네트워크를 확인해주세요.');},8000);
-  db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
-    .then(()=>{clearTimeout(t);btn.innerHTML='✓ 저장됨';setTimeout(reset,1500);})
-    .catch(e=>{clearTimeout(t);console.error('저장 실패:',e);reset();alert('저장 실패: '+e.message);});
 }
 
 // ═══════════════════════════════════════
@@ -1465,7 +1451,6 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('userAvatar').style.display=user.photoURL?'':'none';
     document.getElementById('userName').textContent=user.displayName||'';
     document.getElementById('logoutBtn').style.display='';
-    document.getElementById('saveBtn').style.display='';
     try{
       const snap=await db.collection('users').doc(user.uid).get();
       let fsData=null,lsData=null;
@@ -1484,7 +1469,6 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('userAvatar').style.display='none';
     document.getElementById('userName').textContent='';
     document.getElementById('logoutBtn').style.display='none';
-    document.getElementById('saveBtn').style.display='none';
   }
 });
 </script>
