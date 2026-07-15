@@ -152,6 +152,11 @@ body.locked .dc:hover{filter:none}
 .row-dragging{opacity:.4}
 
 .auto-col{background:#f5f6f8!important;cursor:default!important}
+body.share-mode .dh{display:none!important}
+body.share-mode .nc-actions{display:none!important}
+body.share-mode .sdh{width:0!important;min-width:0!important;padding:0!important;overflow:hidden}
+body.share-mode .cv{pointer-events:none;cursor:default}
+body.share-mode .cv:hover{background:none}
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:9px;font-weight:700;cursor:default;flex-shrink:0;position:relative}
 .info-icon .info-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;font-size:11px;font-weight:400;padding:7px 10px;border-radius:7px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
 .info-icon .info-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#2d3748;border-top:none}
@@ -226,15 +231,15 @@ body.locked .dc:hover{filter:none}
     </div>
   </div>
   <div id="headerProjectControls" style="display:none;align-items:center;gap:8px;contents:none">
-    <div class="sep"></div>
-    <div style="display:flex;align-items:center;gap:4px">
+    <div class="sep" id="sepRefDate"></div>
+    <div id="refDateGroup" style="display:flex;align-items:center;gap:4px">
       <span style="font-size:11px;color:var(--muted);white-space:nowrap">기준일</span>
       <span class="info-icon" id="refDateInfo">i<div class="info-tip">기준일을 설정하면 해당 날짜 기준으로<br>예상진척률이 자동 계산됩니다.</div></span>
       <input type="date" id="refDateInput" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer" oninput="setRefDate(this.value)">
     </div>
-    <div class="sep"></div>
-    <button class="btn btn-primary" onclick="openGM()">+ 새 그룹</button>
-    <button class="btn" onclick="openSett()" title="프로젝트 기간 및 마감일 설정">⚙ 프로젝트 설정</button>
+    <div class="sep" id="sepButtons"></div>
+    <button class="btn btn-primary" id="newGroupBtn" onclick="openGM()">+ 새 그룹</button>
+    <button class="btn" id="projSettBtn" onclick="openSett()" title="프로젝트 기간 및 마감일 설정">⚙ 프로젝트 설정</button>
     <button class="btn" onclick="exportXlsx()" title="엑셀로 내보내기"><svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle"><rect width="14" height="14" rx="2" fill="#217346"/><path d="M3.5 3.5 L5.9 7 L3.5 10.5 H5.4 L7 7.9 L8.6 10.5 H10.5 L8.1 7 L10.5 3.5 H8.6 L7 6.1 L5.4 3.5 Z" fill="white"/></svg> 다운로드</button>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -256,7 +261,7 @@ body.locked .dc:hover{filter:none}
       </div>
       <div class="sep"></div>
       <button class="btn" id="lockBtn" onclick="toggleLock()" title="차트 영역 잠금/해제">🔓 편집중</button>
-      <div class="sep"></div>
+      <div class="sep" id="lockSep"></div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
       <img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
@@ -268,7 +273,7 @@ body.locked .dc:hover{filter:none}
 
 <!-- Login Overlay -->
 <div id="toast"></div>
-<div id="shareBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#4361ee;color:#fff;font-size:12px;padding:7px 16px;align-items:center;gap:10px;justify-content:center">
+<div id="shareBanner" style="display:none;position:fixed;top:var(--header-h);left:0;right:0;z-index:400;background:#4361ee;color:#fff;font-size:12px;padding:7px 16px;align-items:center;gap:10px;justify-content:center">
   👁 읽기 전용으로 공유된 프로젝트입니다.
   <button onclick="location.href=location.pathname" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">내 계정으로 이동 →</button>
 </div>
@@ -714,6 +719,10 @@ async function loadShareMode(shareId){
     APP={projects:[p],activeId:p.id};
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('shareBanner').style.display='flex';
+    document.getElementById('gw').style.marginTop='36px';
+    ['projWrap','refDateGroup','sepRefDate','sepButtons','newGroupBtn','projSettBtn','lockBtn','lockSep','userAvatar','userName','logoutBtn']
+      .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    document.body.classList.add('share-mode');
     locked=true;
     initApp();
   }catch(e){alert('공유 프로젝트 로드 실패: '+e.message);}
