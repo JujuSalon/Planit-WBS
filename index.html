@@ -154,7 +154,6 @@ body.locked .dc:hover{filter:none}
 .auto-col{background:#f5f6f8!important;cursor:default!important}
 body.share-mode .dh{display:none!important}
 body.share-mode .nc-actions{display:none!important}
-body.share-mode .sdh{width:0!important;min-width:0!important;padding:0!important;overflow:hidden}
 body.share-mode .cv{pointer-events:none;cursor:default}
 body.share-mode .cv:hover{background:none}
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:9px;font-weight:700;cursor:default;flex-shrink:0;position:relative}
@@ -502,6 +501,7 @@ const KR_HOL={
 let APP={projects:[],activeId:null};
 let S=null;
 let locked=false;
+let shareMode=false;
 let refDate=null;
 let zoomLevel=90;
 let editGid=null,editTid=null,editGidForT=null,selColor=COLORS[0],editProjId=null;
@@ -723,7 +723,7 @@ async function loadShareMode(shareId){
     ['projWrap','refDateGroup','sepRefDate','sepButtons','newGroupBtn','projSettBtn','lockBtn','lockSep','userAvatar','userName','logoutBtn']
       .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
     document.body.classList.add('share-mode');
-    locked=true;
+    shareMode=true;locked=true;
     initApp();
   }catch(e){alert('공유 프로젝트 로드 실패: '+e.message);}
 }
@@ -1027,7 +1027,7 @@ function toggleLock(){
   btn.style.borderColor=locked?'#dc3545':'';
 }
 function startEdit(td,type,rawVal,onSave){
-  if(td._editing)return;td._editing=true;
+  if(shareMode||td._editing)return;td._editing=true;
   const input=document.createElement('input');input.type=type;input.value=rawVal||'';input.className='cell-input';
   td.innerHTML='';td.appendChild(input);input.focus();
   if(type==='date'){try{input.showPicker();}catch(e){}input.addEventListener('change',()=>input.blur());}
@@ -1285,7 +1285,7 @@ function render(){
       }
       tlc.style.cursor='pointer';
       tlc.addEventListener('click',e=>{
-        if(e.target.closest('a'))return;
+        if(shareMode||e.target.closest('a'))return;
         startEdit(tlc,'url',task.link||'',v=>{
           const t=findTask(tid);if(!t)return;
           t.link=v||null;save();render();
@@ -1319,7 +1319,7 @@ function render(){
       badge.className='st-badge '+(STATUS_CLASS[task.status||'대기']||'st-wait');
       badge.textContent=task.status||'대기';badge.title='클릭하여 상태 변경';
       badge.addEventListener('click',e=>{
-        e.stopPropagation();const t=findTask(tid);if(!t)return;
+        e.stopPropagation();if(shareMode)return;const t=findTask(tid);if(!t)return;
         t.status=nextStatus(t.status);save();render();
       });
       stc.appendChild(badge);
