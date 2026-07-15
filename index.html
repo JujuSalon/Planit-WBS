@@ -151,7 +151,7 @@ body.locked .dc:hover{filter:none}
 .drop-below>td{box-shadow:inset 0 -2px 0 var(--primary)!important}
 .row-dragging{opacity:.4}
 
-.auto-col{background:#eceef2!important;cursor:default!important}
+.auto-col{background:#f5f6f8!important;cursor:default!important}
 .auto-col:hover{filter:none!important}
 .cv{display:flex;align-items:center;padding:0 6px;height:100%;overflow:hidden;white-space:nowrap;font-size:12px;cursor:pointer}
 .s2 .cv,.s3 .cv,.s4 .cv,.s5 .cv,.s6 .cv{justify-content:center}
@@ -1081,7 +1081,7 @@ function render(){
     const th=document.createElement('th');
     th.className=sc;th.style.left=left+'px';th.style.textAlign='left';th.style.paddingLeft='6px';
     if(sc==='s8'||sc==='s10'){
-      th.innerHTML=`<div style="line-height:1.3">${lbl}<span style="display:block;font-size:9px;font-weight:400;opacity:.55;letter-spacing:0">자동계산</span></div>`;
+      th.innerHTML=lbl;
     } else {th.textContent=lbl;}
     if(tip)th.title=tip;
     r1.appendChild(th);
