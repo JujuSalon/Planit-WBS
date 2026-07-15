@@ -357,7 +357,7 @@ body.share-mode .cv:hover{background:none}
     <p class="sub" id="reqTaskName"></p>
     <input type="hidden" id="reqTaskId">
     <div class="fg"><label>실진척률 (%)</label><input type="number" id="reqProgress" min="0" max="100" placeholder="0 ~ 100"/></div>
-    <div class="fg"><label>요청자 <span style="color:#e63946">*</span></label><input type="text" id="reqRequester" placeholder="이름을 입력해주세요"/></div>
+    <div class="fg"><label>요청자</label><input type="text" id="reqRequester" placeholder="이름을 입력해주세요"/></div>
     <div class="mf">
       <button class="btn" onclick="closeReqModal()">취소</button>
       <button class="btn btn-primary" onclick="submitRequest()">요청 보내기</button>
@@ -468,8 +468,8 @@ async function submitRequest(){
   const tid=document.getElementById('reqTaskId').value;
   const progress=parseInt(document.getElementById('reqProgress').value);
   const requester=document.getElementById('reqRequester').value.trim();
+  if(isNaN(progress)||document.getElementById('reqProgress').value===''||progress<0||progress>100){alert('실진척률을 0~100 사이로 입력해주세요.');document.getElementById('reqProgress').focus();return;}
   if(!requester){alert('요청자를 입력해주세요.');document.getElementById('reqRequester').focus();return;}
-  if(isNaN(progress)||progress<0||progress>100){alert('진척률을 0~100 사이로 입력해주세요.');return;}
   const task=findTask(tid);
   try{
     await db.collection('requests').add({shareId:_shareId,taskId:tid,taskName:task?task.name:'',requestedProgress:progress,requester,requestedAt:Date.now(),status:'pending'});
