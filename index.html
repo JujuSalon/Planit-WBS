@@ -474,7 +474,7 @@ function openReqModal(tid,taskName,type,currentVal){
   document.getElementById('reqTaskId').value=tid;
   document.getElementById('reqType').value=type;
   document.getElementById('reqTaskName').textContent=taskName;
-  document.getElementById('reqRequester').value='';
+  document.getElementById('reqRequester').value=localStorage.getItem('wbs_requester')||'';
   const isProgress=type==='progress';
   document.getElementById('reqModalTitle').textContent=isProgress?'실진척률 업데이트 요청':'실종료일 업데이트 요청';
   document.getElementById('reqProgressFg').style.display=isProgress?'':'none';
@@ -506,6 +506,7 @@ async function submitRequest(){
   if(!requester){alert('요청자를 입력해주세요.');document.getElementById('reqRequester').focus();return;}
   try{
     await db.collection('requests').add(payload);
+    localStorage.setItem('wbs_requester',requester);
     closeReqModal();showToast('✓ 요청이 전송됐습니다');
   }catch(e){alert('요청 실패: '+e.message);}
 }
