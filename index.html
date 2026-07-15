@@ -152,6 +152,7 @@ body.locked .dc:hover{filter:none}
 .row-dragging{opacity:.4}
 
 .auto-col{background:#f5f6f8!important;cursor:default!important}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#dc3545;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
 .auto-col:hover{filter:none!important}
 .cv{display:flex;align-items:center;padding:0 6px;height:100%;overflow:hidden;white-space:nowrap;font-size:12px;cursor:pointer}
 .s2 .cv,.s3 .cv,.s4 .cv,.s5 .cv,.s6 .cv{justify-content:center}
@@ -257,6 +258,7 @@ body.locked .dc:hover{filter:none}
 </header>
 
 <!-- Login Overlay -->
+<div id="toast"></div>
 <div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#4361ee,#3a0ca3);z-index:500;align-items:center;justify-content:center">
   <div style="text-align:center;color:white;padding:40px">
     <div style="font-size:48px;margin-bottom:12px">📋</div>
@@ -510,10 +512,17 @@ function getMilestone(d){
 // Persistence
 // ═══════════════════════════════════════
 const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.style.opacity='0';},4000);
+}
 const saveToFirestore=()=>{
   if(!currentUser)return;
   db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
-    .catch(e=>console.error('저장 실패:',e));
+    .catch(e=>{console.error('저장 실패:',e);showToast('⚠️ 저장 실패: '+e.message);});
 };
 const save=()=>{
   APP._savedAt=Date.now();
