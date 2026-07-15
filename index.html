@@ -490,10 +490,12 @@ async function submitRequest(){
     const progress=parseInt(document.getElementById('reqProgress').value);
     if(isNaN(progress)||document.getElementById('reqProgress').value===''||progress<0||progress>100){alert('실진척률을 0~100 사이로 입력해주세요.');document.getElementById('reqProgress').focus();return;}
     payload.requestedProgress=progress;
+    payload.currentProgress=task?task.actualProgress:null;
   }else{
     const endDate=document.getElementById('reqEndDate').value;
     if(!endDate){alert('실종료일을 입력해주세요.');document.getElementById('reqEndDate').focus();return;}
     payload.requestedEndDate=endDate;
+    payload.currentEndDate=task?task.actualEndDate:null;
   }
   if(!requester){alert('요청자를 입력해주세요.');document.getElementById('reqRequester').focus();return;}
   try{
@@ -550,14 +552,15 @@ function renderReqPanel(){
   list.innerHTML=pendingRequests.map(r=>{
     const isED=r.type==='endDate';
     const typeLabel=isED?'실종료일':'실진척률';
-    const valLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
+    const curLabel=isED?(r.currentEndDate?sdf(parse(r.currentEndDate)):'없음'):(r.currentProgress!=null?`${r.currentProgress}%`:'없음');
+    const newLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
     const approveFn=isED?`approveEndDateRequest('${r.id}','${r.taskId}','${r.requestedEndDate||''}')`:`approveRequest('${r.id}','${r.taskId}',${r.requestedProgress})`;
     return`<div class="req-item">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <span class="req-item-name" style="margin:0">${esc(r.taskName)}</span>
         <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:${isED?'#f0e6ff':'#e8f0ff'};color:${isED?'#7209b7':'#4361ee'}">${typeLabel}</span>
       </div>
-      <div class="req-item-meta">${typeLabel} → <strong style="color:var(--text)">${valLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
+      <div class="req-item-meta"><span style="color:var(--muted)">${curLabel}</span> → <strong style="color:var(--text)">${newLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${fmtTs(r.requestedAt)}</div>
       <div style="display:flex;gap:6px">
         <button class="btn btn-primary btn-sm" onclick="${approveFn}">승인</button>
@@ -583,7 +586,8 @@ async function loadReqHistory(){
     hlist.innerHTML=rows.map(r=>{
       const isED=r.type==='endDate';
       const typeLabel=isED?'실종료일':'실진척률';
-      const valLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
+      const curLabel=isED?(r.currentEndDate?sdf(parse(r.currentEndDate)):'없음'):(r.currentProgress!=null?`${r.currentProgress}%`:'없음');
+      const newLabel=isED?(r.requestedEndDate?sdf(parse(r.requestedEndDate)):'—'):`${r.requestedProgress}%`;
       return`<div class="req-item" style="opacity:.85">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div style="display:flex;align-items:center;gap:6px">
@@ -592,7 +596,7 @@ async function loadReqHistory(){
           </div>
           <span style="font-size:11px;font-weight:700;color:${r.status==='approved'?'#06d6a0':'#e63946'}">${r.status==='approved'?'승인':'거절'}</span>
         </div>
-        <div class="req-item-meta">${typeLabel} → <strong style="color:var(--text)">${valLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
+        <div class="req-item-meta"><span style="color:var(--muted)">${curLabel}</span> → <strong style="color:var(--text)">${newLabel}</strong>${r.requester?` · 요청자: ${esc(r.requester)}`:''}</div>
         <div style="font-size:11px;color:var(--muted)">${fmtTs(r.requestedAt)}</div>
       </div>`;
     }).join('');
