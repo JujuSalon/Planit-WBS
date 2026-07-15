@@ -543,6 +543,10 @@ const saveToFirestore=()=>{
   if(!currentUser)return;
   db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
     .catch(e=>{console.error('저장 실패:',e);showToast('⚠️ 저장 실패: '+e.message);});
+  if(S&&S.shareId){
+    db.collection('shares').doc(S.shareId).set({data:JSON.stringify(S),sharedAt:Date.now(),owner:currentUser.uid})
+      .catch(e=>console.error('공유 업데이트 실패:',e));
+  }
 };
 const save=()=>{
   APP._savedAt=Date.now();
@@ -711,21 +715,25 @@ async function shareProject(id){
     showToast('✓ 공유 링크가 복사됐습니다');
   }catch(e){console.error(e);alert('공유 실패: '+e.message);}
 }
-async function loadShareMode(shareId){
-  try{
-    const snap=await db.collection('shares').doc(shareId).get();
+function loadShareMode(shareId){
+  db.collection('shares').doc(shareId).onSnapshot(snap=>{
     if(!snap.exists){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:#888">공유 링크가 유효하지 않습니다.</div>';return;}
     const p=JSON.parse(snap.data().data);
-    APP={projects:[p],activeId:p.id};
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('shareBanner').style.display='flex';
-    document.querySelector('header').style.marginTop='36px';
-    ['projWrap','refDateGroup','sepRefDate','sepButtons','newGroupBtn','projSettBtn','lockBtn','lockSep','userAvatar','userName','logoutBtn']
-      .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-    document.body.classList.add('share-mode');
-    shareMode=true;locked=true;
-    initApp();
-  }catch(e){alert('공유 프로젝트 로드 실패: '+e.message);}
+    if(!shareMode){
+      APP={projects:[p],activeId:p.id};
+      document.getElementById('loginOverlay').style.display='none';
+      document.getElementById('shareBanner').style.display='flex';
+      document.querySelector('header').style.marginTop='36px';
+      ['projWrap','refDateGroup','sepRefDate','sepButtons','newGroupBtn','projSettBtn','lockBtn','lockSep','userAvatar','userName','logoutBtn']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+      document.body.classList.add('share-mode');
+      shareMode=true;locked=true;
+      initApp();
+    }else{
+      S=p;APP.projects=[p];
+      render();
+    }
+  },e=>alert('공유 프로젝트 로드 실패: '+e.message));
 }
 function copyProject(id){
   const src=APP.projects.find(p=>p.id===id);if(!src)return;
