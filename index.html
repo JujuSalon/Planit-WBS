@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Planit WBS</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234361ee'/%3E%3Crect x='5' y='7' width='14' height='5' rx='2.5' fill='white'/%3E%3Crect x='10' y='14' width='17' height='5' rx='2.5' fill='white' opacity='.75'/%3E%3Crect x='5' y='21' width='11' height='5' rx='2.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -243,8 +246,27 @@ body.locked .dc:hover{filter:none}
     </div>
     <div class="sep"></div>
     <button class="btn" id="lockBtn" onclick="toggleLock()" title="차트 영역 잠금/해제">🔓 편집중</button>
+    <div class="sep"></div>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+      <img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
+      <span id="userName" style="font-size:11px;color:var(--muted);white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis"></span>
+      <button class="btn btn-sm" onclick="signOutGoogle()" id="logoutBtn" style="display:none">로그아웃</button>
+    </div>
   </div>
 </header>
+
+<!-- Login Overlay -->
+<div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#4361ee,#3a0ca3);z-index:500;align-items:center;justify-content:center">
+  <div style="text-align:center;color:white;padding:40px">
+    <div style="font-size:48px;margin-bottom:12px">📋</div>
+    <h1 style="font-size:28px;font-weight:800;margin-bottom:8px">Planit WBS</h1>
+    <p style="opacity:.75;margin-bottom:32px;font-size:14px">구글 계정으로 로그인하면<br>어느 기기에서나 데이터가 안전하게 저장됩니다.</p>
+    <button onclick="signInGoogle()" style="display:inline-flex;align-items:center;gap:10px;padding:12px 24px;background:white;color:#333;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2)">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/></svg>
+      Google로 로그인
+    </button>
+  </div>
+</div>
 
 <div class="gantt-wrap" id="gw">
   <table id="gt"><thead id="gh"></thead><tbody id="gb"></tbody></table>
@@ -346,6 +368,30 @@ body.locked .dc:hover{filter:none}
 </div>
 
 <script>
+// ═══════════════════════════════════════
+// Firebase
+// ═══════════════════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyA5SifdWqAFp0kc6AuqVF0SPdd4XEy_xK8",
+  authDomain:"planit-wbs.firebaseapp.com",
+  projectId:"planit-wbs",
+  storageBucket:"planit-wbs.firebasestorage.app",
+  messagingSenderId:"716097015036",
+  appId:"1:716097015036:web:dfb58e45d478e6220adb79"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+let currentUser=null,saveTimer=null;
+
+function signInGoogle(){
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(e=>alert('로그인 실패: '+e.message));
+}
+function signOutGoogle(){
+  if(!confirm('로그아웃 하시겠습니까?'))return;
+  auth.signOut();
+}
+
 // ═══════════════════════════════════════
 // Constants
 // ═══════════════════════════════════════
@@ -465,7 +511,15 @@ function getMilestone(d){
 // Persistence
 // ═══════════════════════════════════════
 const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
-const save=()=>localStorage.setItem('wbs_app',JSON.stringify(APP));
+const save=()=>{
+  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
+  if(!currentUser)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
+      .catch(e=>console.error('저장 실패:',e));
+  },1500);
+};
 
 function makeProject(name='새 프로젝트',groups=[],viewMode='day'){
   return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[]};
@@ -487,12 +541,9 @@ function setActive(id){
   APP.activeId=id;S=APP.projects.find(p=>p.id===id);
   if(S&&!S.viewStart)S.viewStart=fmt(addD(tod(),-7));
 }
-function init(){
-  try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e){}
+function initApp(){
   if(!APP.projects||!APP.projects.length){
-    let old=null;try{const s=localStorage.getItem('wbs3');if(s)old=JSON.parse(s);}catch(e){}
-    const p=old?makeProject('기본 프로젝트',old.groups||[],old.viewMode||'day'):makeProject();
-    if(old)p.viewStart=old.viewStart||p.viewStart;
+    const p=makeProject();
     APP={projects:[p],activeId:p.id};
   }
   if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
@@ -1356,7 +1407,30 @@ function deleteTask(tid){
 document.getElementById('tName').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
 document.getElementById('tModal').addEventListener('click',function(e){if(e.target===this)closeTM();});
 
-init();
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    currentUser=user;
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('userAvatar').src=user.photoURL||'';
+    document.getElementById('userAvatar').style.display=user.photoURL?'':'none';
+    document.getElementById('userName').textContent=user.displayName||'';
+    document.getElementById('logoutBtn').style.display='';
+    try{
+      const snap=await db.collection('users').doc(user.uid).get();
+      if(snap.exists&&snap.data().data)APP=JSON.parse(snap.data().data);
+      else{try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e){}}
+    }catch(e){
+      try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e2){}
+    }
+    initApp();
+  }else{
+    currentUser=null;
+    document.getElementById('loginOverlay').style.display='flex';
+    document.getElementById('userAvatar').style.display='none';
+    document.getElementById('userName').textContent='';
+    document.getElementById('logoutBtn').style.display='none';
+  }
+});
 </script>
 </body>
 </html>
