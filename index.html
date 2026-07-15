@@ -268,6 +268,12 @@ body.locked .dc:hover{filter:none}
   </div>
 </div>
 
+<div id="emptyState" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted)">
+  <div style="font-size:48px">📋</div>
+  <p style="font-size:15px;font-weight:700;color:var(--text)">프로젝트가 없습니다</p>
+  <p style="font-size:13px">새 프로젝트를 만들어 WBS를 시작하세요.</p>
+  <button class="btn btn-primary" style="margin-top:8px" onclick="newProject()">+ 새 프로젝트 만들기</button>
+</div>
 <div class="gantt-wrap" id="gw">
   <table id="gt"><thead id="gh"></thead><tbody id="gb"></tbody></table>
 </div>
@@ -562,6 +568,7 @@ function initApp(){
   if(!APP.projects||!APP.projects.length){
     const p=makeDefaultProject();
     APP={projects:[p],activeId:p.id};
+    save();
   }
   if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
   setActive(APP.activeId);APP.projects.forEach(migrate);
@@ -664,12 +671,14 @@ function copyProject(id){
   setActive(copy.id);save();closeProjPanel();renderProjSelector();render();
 }
 function deleteProject(id){
-  if(APP.projects.length<=1){alert('마지막 프로젝트는 삭제할 수 없습니다.');return;}
   const p=APP.projects.find(x=>x.id===id);
   if(!confirm(`"${p?.name}" 프로젝트를 삭제할까요?\n모든 데이터가 삭제됩니다.`))return;
   APP.projects=APP.projects.filter(x=>x.id!==id);
-  if(APP.activeId===id)setActive(APP.projects[0].id);
-  save();renderProjSelector();render();
+  if(APP.activeId===id){
+    if(APP.projects.length)setActive(APP.projects[0].id);
+    else{APP.activeId=null;S=null;}
+  }
+  save();closeProjPanel();renderProjSelector();render();
 }
 function openPM(id){
   editProjId=id;const p=APP.projects.find(x=>x.id===id);if(!p)return;
@@ -1024,7 +1033,9 @@ function cellStyle(d,ts,te,gColor,isDone){
 // Render
 // ═══════════════════════════════════════
 function render(){
-  if(!S)return;
+  const es=document.getElementById('emptyState'),gw=document.getElementById('gw');
+  if(!S){es.style.display='flex';gw.style.display='none';return;}
+  es.style.display='none';gw.style.display='';
   const dates=getDates(),T=tod(),CW=S.viewMode==='day'?32:52;
   const head=document.getElementById('gh'),body=document.getElementById('gb');
   const DOW=['일','월','화','수','목','금','토'];
