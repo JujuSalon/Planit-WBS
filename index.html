@@ -576,13 +576,12 @@ function setActive(id){
   if(S&&!S.viewStart)S.viewStart=fmt(addD(tod(),-7));
 }
 function initApp(){
-  if(!APP.projects||!APP.projects.length){
-    const p=makeDefaultProject();
-    APP={projects:[p],activeId:p.id};
-    save();
-  }
-  if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
-  setActive(APP.activeId);APP.projects.forEach(migrate);
+  if(!APP.projects)APP.projects=[];
+  if(APP.projects.length){
+    if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
+    setActive(APP.activeId);
+  }else{S=null;APP.activeId=null;}
+  APP.projects.forEach(migrate);
   try{const z=localStorage.getItem('wbs_zoom');if(z)zoomLevel=Math.min(150,Math.max(50,parseInt(z)||100));}catch(e){}
   applyZoom();
   refDate=tod();
