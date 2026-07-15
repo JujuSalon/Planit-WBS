@@ -228,7 +228,6 @@ body.locked .dc:hover{filter:none}
   <div class="sep"></div>
   <button class="btn btn-primary" onclick="openGM()">+ 새 그룹</button>
   <button class="btn" onclick="exportXlsx()" title="엑셀로 내보내기"><svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;vertical-align:middle"><rect width="14" height="14" rx="2" fill="#217346"/><path d="M3.5 3.5 L5.9 7 L3.5 10.5 H5.4 L7 7.9 L8.6 10.5 H10.5 L8.1 7 L10.5 3.5 H8.6 L7 6.1 L5.4 3.5 Z" fill="white"/></svg> 다운로드</button>
-  <button class="btn" onclick="openHolModal()" title="휴일 관리">🗓 휴일 관리</button>
   <button class="btn" onclick="openSett()" title="프로젝트 기간 및 마감일 설정">⚙ 프로젝트 설정</button>
   <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
     <div class="toggle">
@@ -250,10 +249,10 @@ body.locked .dc:hover{filter:none}
     <button class="btn" id="lockBtn" onclick="toggleLock()" title="차트 영역 잠금/해제">🔓 편집중</button>
     <div class="sep"></div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <button class="btn btn-sm btn-primary" id="saveBtn" onclick="manualSave()" style="display:none">💾 저장</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="manualSave()" style="display:none">💾 저장</button>
       <img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
       <span id="userName" style="font-size:11px;color:var(--muted);white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis"></span>
-      <button class="btn btn-sm" onclick="signOutGoogle()" id="logoutBtn" style="display:none">로그아웃</button>
+      <button class="btn" onclick="signOutGoogle()" id="logoutBtn" style="display:none">로그아웃</button>
     </div>
   </div>
 </header>
@@ -301,27 +300,19 @@ body.locked .dc:hover{filter:none}
         <button class="btn btn-primary btn-sm" onclick="addMilestone()" style="flex-shrink:0">추가</button>
       </div>
     </div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <label style="display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">휴일 관리</label>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:8px">공휴일은 자동 표시됩니다. 회사·프로젝트 전용 휴일을 추가하세요.</p>
+      <div class="hol-add-row">
+        <input type="date" id="holDate" style="width:150px"/>
+        <input type="text" id="holName" placeholder="휴일명 (예: 여름 휴가)" style="flex:1"/>
+        <button class="btn btn-primary btn-sm" onclick="addCustomHol()">추가</button>
+      </div>
+      <div class="hol-list" id="holList"></div>
+    </div>
     <div class="mf" style="margin-top:16px">
       <button class="btn" onclick="closeSett()">취소</button>
       <button class="btn btn-primary" onclick="saveSett()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- Holiday Manager Modal -->
-<div class="overlay" id="holModal">
-  <div class="modal" style="width:480px">
-    <h2>휴일 관리</h2>
-    <p class="sub">공휴일은 자동 표시됩니다. 회사·프로젝트 전용 휴일을 추가하세요.</p>
-    <div class="hol-add-row">
-      <input type="date" id="holDate" style="width:150px"/>
-      <input type="text" id="holName" placeholder="휴일명 (예: 여름 휴가)" style="flex:1"/>
-      <button class="btn btn-primary btn-sm" onclick="addCustomHol()">추가</button>
-    </div>
-    <div class="hol-list" id="holList"></div>
-    <p class="hol-note">💡 이 프로젝트에만 적용되는 휴일입니다. 간트 차트에 공휴일과 같은 방식으로 표시됩니다.</p>
-    <div class="mf" style="margin-top:16px"><div></div>
-      <button class="btn btn-primary" onclick="closeHolModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -406,10 +397,12 @@ function manualSave(){
   APP._savedAt=Date.now();
   try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
   const btn=document.getElementById('saveBtn');
-  btn.textContent='저장 중...';btn.disabled=true;
+  btn.innerHTML='저장 중...';btn.disabled=true;
+  const reset=()=>{btn.innerHTML='💾 저장';btn.disabled=false;};
+  const t=setTimeout(()=>{reset();alert('저장 시간이 초과됐습니다. 네트워크를 확인해주세요.');},8000);
   db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
-    .then(()=>{btn.textContent='✓ 저장됨';setTimeout(()=>{btn.textContent='💾 저장';btn.disabled=false;},1500);})
-    .catch(e=>{console.error('저장 실패:',e);btn.textContent='💾 저장';btn.disabled=false;alert('저장 실패: '+e.message);});
+    .then(()=>{clearTimeout(t);btn.innerHTML='✓ 저장됨';setTimeout(reset,1500);})
+    .catch(e=>{clearTimeout(t);console.error('저장 실패:',e);reset();alert('저장 실패: '+e.message);});
 }
 
 // ═══════════════════════════════════════
@@ -730,8 +723,10 @@ function openSett(){
   document.getElementById('settEnd').value=S.projectEnd||'';
   document.getElementById('msDate').value='';
   document.getElementById('msName').value='';
+  document.getElementById('holDate').value='';
+  document.getElementById('holName').value='';
   selMsColor=MS_COLORS[0];
-  renderMsList();renderMsColorPicker();
+  renderMsList();renderMsColorPicker();renderHolList();
   document.getElementById('settModal').classList.add('show');
 }
 function closeSett(){document.getElementById('settModal').classList.remove('show');}
@@ -782,9 +777,6 @@ function delMilestone(id){
   save();renderMsList();render();
 }
 
-function openHolModal(){renderHolList();document.getElementById('holDate').value='';document.getElementById('holName').value='';document.getElementById('holModal').classList.add('show');}
-function closeHolModal(){document.getElementById('holModal').classList.remove('show');}
-document.getElementById('holModal').addEventListener('click',function(e){if(e.target===this)closeHolModal();});
 function renderHolList(){
   const list=document.getElementById('holList');list.innerHTML='';
   const hols=S.customHols||{};const keys=Object.keys(hols).sort();
