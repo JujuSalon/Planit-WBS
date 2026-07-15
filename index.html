@@ -156,7 +156,7 @@ body.share-mode .dh{display:none!important}
 body.share-mode .nc-actions{display:none!important}
 body.share-mode .cv{pointer-events:none;cursor:default}
 body.share-mode .cv:hover{background:none}
-.req-bell{position:relative;background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:var(--muted)}
+.req-bell{position:relative;display:inline-flex;align-items:center;gap:5px}
 .req-badge{position:absolute;top:-4px;right:-4px;background:#e63946;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 .req-item{padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
 .req-item-name{font-size:13px;font-weight:600;margin-bottom:4px}
@@ -272,7 +272,7 @@ body.share-mode .cv:hover{background:none}
       <div class="sep" id="lockSep"></div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <button class="req-bell" id="reqBell" onclick="openReqPanel()" title="업데이트 요청" style="display:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="req-badge" id="reqBadge" style="display:none">0</span></button>
+      <button class="btn req-bell" id="reqBell" onclick="openReqPanel()" title="업데이트 요청" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="req-badge" id="reqBadge" style="display:none">0</span></button>
       <img id="userAvatar" style="width:24px;height:24px;border-radius:50%;display:none">
       <span id="userName" style="font-size:11px;color:var(--muted);white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis"></span>
       <button class="btn" onclick="signOutGoogle()" id="logoutBtn" style="display:none">로그아웃</button>
