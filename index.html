@@ -482,7 +482,7 @@ function openReqModal(tid,taskName,type,currentVal){
   if(isProgress){document.getElementById('reqProgress').value=currentVal!=null?currentVal:'';}
   else{document.getElementById('reqEndDate').value=currentVal||'';}
   document.getElementById('reqModal').classList.add('show');
-  setTimeout(()=>document.getElementById(isProgress?'reqProgress':'reqEndDate').focus(),100);
+  if(isProgress)setTimeout(()=>document.getElementById('reqProgress').focus(),100);
 }
 function closeReqModal(){document.getElementById('reqModal').classList.remove('show');}
 document.getElementById('reqModal').addEventListener('click',function(e){if(e.target===this)closeReqModal();});
