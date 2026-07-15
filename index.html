@@ -460,7 +460,7 @@ function openReqModal(tid,taskName,currentProgress){
   document.getElementById('reqProgress').value=currentProgress!=null?currentProgress:'';
   document.getElementById('reqRequester').value='';
   document.getElementById('reqModal').classList.add('show');
-  setTimeout(()=>document.getElementById('reqRequester').focus(),100);
+  setTimeout(()=>document.getElementById('reqProgress').focus(),100);
 }
 function closeReqModal(){document.getElementById('reqModal').classList.remove('show');}
 document.getElementById('reqModal').addEventListener('click',function(e){if(e.target===this)closeReqModal();});
