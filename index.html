@@ -1327,22 +1327,31 @@ function render(){
 // ═══════════════════════════════════════
 function onMD(e,tid,d){
   if(locked)return;e.preventDefault();const task=findTask(tid);if(!task)return;
-  drag.on=true;drag.tid=tid;
+  drag.on=true;drag.tid=tid;drag.moved=false;drag.startD=new Date(d);
   const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
   if(ts&&te&&cellInRange(d,ts,te)){
-    drag.mode='move';drag.dur=diff(ts,te);
+    drag.mode='move';drag.dur=diff(ts,te);drag.inBar=true;
     drag.offset=S.viewMode==='week'?Math.round(diff(monOf(ts),d)/7):diff(ts,d);
   } else {
-    drag.mode='new';drag.anchor=new Date(d);
+    drag.mode='new';drag.anchor=new Date(d);drag.inBar=false;
     setDates(tid,d,S.viewMode==='week'?addD(d,6):d,true);
   }
 }
 function onME(tid,d){
   if(!drag.on||drag.tid!==tid)return;
+  drag.moved=true;
   if(drag.mode==='new'){const start=drag.anchor<=d?drag.anchor:d,end=drag.anchor<=d?d:drag.anchor;setDates(tid,start,S.viewMode==='week'?addD(end,6):end,true);}
   else{const ns=S.viewMode==='week'?addD(d,-drag.offset*7):addD(d,-drag.offset);setDates(tid,ns,addD(ns,drag.dur),true);}
 }
-document.addEventListener('mouseup',()=>{if(drag.on){drag.on=false;save();render();}});
+document.addEventListener('mouseup',()=>{
+  if(drag.on){
+    if(!drag.moved&&drag.inBar){
+      const end=S.viewMode==='week'?addD(drag.startD,6):drag.startD;
+      setDates(drag.tid,drag.startD,end);
+    }
+    drag.on=false;save();render();
+  }
+});
 
 function setDates(tid,start,end,noSave){
   const task=findTask(tid);if(!task)return;
