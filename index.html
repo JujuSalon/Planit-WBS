@@ -268,6 +268,10 @@ body.locked .dc:hover{filter:none}
 
 <!-- Login Overlay -->
 <div id="toast"></div>
+<div id="shareBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#4361ee;color:#fff;font-size:12px;padding:7px 16px;align-items:center;gap:10px;justify-content:center">
+  👁 읽기 전용으로 공유된 프로젝트입니다.
+  <button onclick="location.href=location.pathname" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">내 계정으로 이동 →</button>
+</div>
 <div id="loginOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#4361ee,#3a0ca3);z-index:500;align-items:center;justify-content:center">
   <div style="text-align:center;color:white;padding:40px">
     <div style="font-size:48px;margin-bottom:12px">📋</div>
@@ -665,6 +669,7 @@ function renderProjSelector(){
     item.innerHTML=`<span style="font-size:14px">📁</span>
       <span class="proj-item-name" title="${esc(p.name)}">${esc(p.name)}</span>
       <div class="proj-item-acts">
+        <button class="ic" title="공유 링크 복사" onclick="event.stopPropagation();shareProject('${p.id}')">🔗</button>
         <button class="ic" title="복사" onclick="event.stopPropagation();copyProject('${p.id}')">⊕</button>
         <button class="ic" title="이름 변경" onclick="event.stopPropagation();openPM('${p.id}')">✏</button>
         <button class="ic" title="삭제" style="color:#dc3545" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</button>
@@ -688,6 +693,31 @@ function switchProject(id){
   resetRefDate();render();
 }
 function newProject(){const p=makeDefaultProject();APP.projects.push(p);setActive(p.id);save();closeProjPanel();renderProjSelector();resetRefDate();render();openPM(p.id);}
+async function shareProject(id){
+  if(!currentUser){alert('로그인이 필요합니다.');return;}
+  const p=APP.projects.find(x=>x.id===id);if(!p)return;
+  const shareId=p.shareId||uid();
+  p.shareId=shareId;
+  try{
+    await db.collection('shares').doc(shareId).set({data:JSON.stringify(p),sharedAt:Date.now(),owner:currentUser.uid});
+    save();
+    const url=location.origin+location.pathname+'?share='+shareId;
+    await navigator.clipboard.writeText(url);
+    showToast('✓ 공유 링크가 복사됐습니다');
+  }catch(e){console.error(e);alert('공유 실패: '+e.message);}
+}
+async function loadShareMode(shareId){
+  try{
+    const snap=await db.collection('shares').doc(shareId).get();
+    if(!snap.exists){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:#888">공유 링크가 유효하지 않습니다.</div>';return;}
+    const p=JSON.parse(snap.data().data);
+    APP={projects:[p],activeId:p.id};
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('shareBanner').style.display='flex';
+    locked=true;
+    initApp();
+  }catch(e){alert('공유 프로젝트 로드 실패: '+e.message);}
+}
 function copyProject(id){
   const src=APP.projects.find(p=>p.id===id);if(!src)return;
   const copy=JSON.parse(JSON.stringify(src));
@@ -1476,7 +1506,9 @@ function deleteTask(tid){
 document.getElementById('tName').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
 document.getElementById('tModal').addEventListener('click',function(e){if(e.target===this)closeTM();});
 
-auth.onAuthStateChanged(async user=>{
+const _shareId=new URLSearchParams(location.search).get('share');
+if(_shareId){loadShareMode(_shareId);}
+else auth.onAuthStateChanged(async user=>{
   if(user){
     currentUser=user;
     document.getElementById('loginOverlay').style.display='none';
@@ -1503,7 +1535,7 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('userName').textContent='';
     document.getElementById('logoutBtn').style.display='none';
   }
-});
+})
 </script>
 </body>
 </html>
