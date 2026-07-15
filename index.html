@@ -370,14 +370,15 @@ body.share-mode .dc{pointer-events:none!important}
 <!-- Requests Panel (admin) -->
 <div class="overlay" id="reqPanel">
   <div class="modal" style="width:420px;max-height:85vh;display:flex;flex-direction:column">
-    <h2>업데이트 요청 <span id="reqCount" style="font-size:13px;color:var(--muted);font-weight:400"></span></h2>
-    <div id="reqPanelList" style="overflow-y:auto;margin-top:8px"></div>
-    <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
-      <button class="btn btn-sm" id="reqHistoryToggle" onclick="toggleReqHistory()" style="width:100%;justify-content:center">이력 보기</button>
-      <div id="reqHistoryWrap" style="display:none;margin-top:10px">
-        <p style="font-size:11px;color:var(--muted);margin-bottom:8px">최근 2주 이내 처리된 요청만 표시됩니다.</p>
-        <div id="reqHistoryList" style="overflow-y:auto;max-height:200px"></div>
-      </div>
+    <h2>업데이트 요청</h2>
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px">
+      <button id="reqTabPending" onclick="switchReqTab('pending')" style="flex:1;background:none;border:none;padding:8px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary)">대기 중 <span id="reqCount"></span></button>
+      <button id="reqTabHistory" onclick="switchReqTab('history')" style="flex:1;background:none;border:none;padding:8px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted)">처리 이력</button>
+    </div>
+    <div id="reqPanelList" style="overflow-y:auto;flex:1"></div>
+    <div id="reqHistoryWrap" style="display:none;flex:1;overflow-y:auto">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:8px">최근 2주 이내 처리된 요청만 표시됩니다.</p>
+      <div id="reqHistoryList"></div>
     </div>
     <div class="mf" style="margin-top:12px"><div></div>
       <button class="btn" onclick="closeReqPanel()">닫기</button>
@@ -527,14 +528,21 @@ function updateReqBadge(){
   badge.textContent=count;
 }
 const fmtTs=ts=>{if(!ts)return'';const d=new Date(ts);return`${String(d.getFullYear()).slice(2)}/${d.getMonth()+1}/${d.getDate()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;};
-function openReqPanel(){
-  document.getElementById('reqHistoryWrap').style.display='none';
-  document.getElementById('reqHistoryToggle').textContent='이력 보기';
-  renderReqPanel();
-  document.getElementById('reqPanel').classList.add('show');
-}
+let _reqTab='pending';
+function openReqPanel(){_reqTab='pending';applyReqTab();document.getElementById('reqPanel').classList.add('show');}
 function closeReqPanel(){document.getElementById('reqPanel').classList.remove('show');}
 document.getElementById('reqPanel').addEventListener('click',function(e){if(e.target===this)closeReqPanel();});
+function switchReqTab(tab){_reqTab=tab;applyReqTab();}
+function applyReqTab(){
+  const isPending=_reqTab==='pending';
+  document.getElementById('reqPanelList').style.display=isPending?'':'none';
+  document.getElementById('reqHistoryWrap').style.display=isPending?'none':'';
+  document.getElementById('reqTabPending').style.borderBottomColor=isPending?'var(--primary)':'transparent';
+  document.getElementById('reqTabPending').style.color=isPending?'var(--primary)':'var(--muted)';
+  document.getElementById('reqTabHistory').style.borderBottomColor=isPending?'transparent':'var(--primary)';
+  document.getElementById('reqTabHistory').style.color=isPending?'var(--muted)':'var(--primary)';
+  if(isPending)renderReqPanel();else loadReqHistory();
+}
 function renderReqPanel(){
   const list=document.getElementById('reqPanelList');
   document.getElementById('reqCount').textContent=pendingRequests.length?`(${pendingRequests.length})` :'';
@@ -557,15 +565,6 @@ function renderReqPanel(){
       </div>
     </div>`;
   }).join('');
-}
-let _historyOpen=false;
-async function toggleReqHistory(){
-  _historyOpen=!_historyOpen;
-  const wrap=document.getElementById('reqHistoryWrap');
-  const btn=document.getElementById('reqHistoryToggle');
-  wrap.style.display=_historyOpen?'block':'none';
-  btn.textContent=_historyOpen?'이력 닫기':'이력 보기';
-  if(_historyOpen)await loadReqHistory();
 }
 async function loadReqHistory(){
   const sid=S&&S.shareId?S.shareId:null;if(!sid)return;
