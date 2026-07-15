@@ -165,10 +165,10 @@ body.share-mode .dc{pointer-events:none!important}
 .req-btn{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer}
 .req-btn-send{background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:1px 5px;border-radius:4px;cursor:pointer;line-height:1.6}
 .req-btn-send:hover{border-color:var(--primary);color:var(--primary)}
-.req-cell{display:flex;align-items:center;justify-content:center}
-.req-cell .req-btn-send{display:none}
-.req-cell:hover .req-prog{display:none}
-.req-cell:hover .req-btn-send{display:inline-flex}
+.req-cell-wrap{display:flex;align-items:center;justify-content:center;height:100%}
+.req-cell-wrap .req-btn-send{display:none}
+.req-cell-wrap:hover .req-prog{display:none}
+.req-cell-wrap:hover .req-btn-send{display:inline-flex}
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:9px;font-weight:700;cursor:default;flex-shrink:0;position:relative}
 .info-icon .info-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;font-size:11px;font-weight:400;padding:7px 10px;border-radius:7px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
 .info-icon .info-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#2d3748;border-top:none}
@@ -1549,13 +1549,14 @@ function render(){
       const tac=tr.insertCell();tac.className='s6';
       const taP=task.actualEndDate?parse(task.actualEndDate):null;
       if(shareMode){
-        tac.classList.add('req-cell');
+        const wrap=document.createElement('div');wrap.className='req-cell-wrap';
         const aedProg=document.createElement('div');aedProg.className='req-prog';
         aedProg.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
-        tac.appendChild(aedProg);
+        wrap.appendChild(aedProg);
         const aedBtn=document.createElement('button');aedBtn.className='req-btn-send';aedBtn.textContent='요청';aedBtn.title='실종료일 업데이트 요청';
         aedBtn.onclick=e=>{e.stopPropagation();openReqModal(tid,task.name,'endDate',task.actualEndDate);};
-        tac.appendChild(aedBtn);
+        wrap.appendChild(aedBtn);
+        tac.appendChild(wrap);
       }else{
         tac.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
         tac.addEventListener('click',()=>{startEdit(tac,'date',task.actualEndDate||'',v=>{const t=findTask(tid);if(t){t.actualEndDate=v||null;if(v)t.status='완료';save();}render();});});
@@ -1583,13 +1584,14 @@ function render(){
       const apc=tr.insertCell();apc.className='s9';
       const actPct=isDone?(task.actualProgress!=null?task.actualProgress:100):task.actualProgress;
       if(shareMode){
-        apc.classList.add('req-cell');
+        const wrap=document.createElement('div');wrap.className='req-cell-wrap';
         const progWrap=document.createElement('div');progWrap.className='req-prog';
         progWrap.innerHTML=renderProgress(expPct,actPct,isDone,task.status);
-        apc.appendChild(progWrap);
+        wrap.appendChild(progWrap);
         const rb=document.createElement('button');rb.className='req-btn-send';rb.textContent='요청';rb.title='진척률 업데이트 요청';
         rb.onclick=e=>{e.stopPropagation();openReqModal(tid,task.name,'progress',task.actualProgress);};
-        apc.appendChild(rb);
+        wrap.appendChild(rb);
+        apc.appendChild(wrap);
       }else{
         apc.innerHTML=renderProgress(expPct,actPct,isDone,task.status);
         apc.addEventListener('click',()=>{
