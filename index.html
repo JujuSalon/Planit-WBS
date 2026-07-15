@@ -519,15 +519,24 @@ function getMilestone(d){
 // Persistence
 // ═══════════════════════════════════════
 const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+const saveToFirestore=()=>{
+  if(!currentUser)return;
+  db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
+    .catch(e=>console.error('저장 실패:',e));
+};
 const save=()=>{
+  APP._savedAt=Date.now();
   try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
   if(!currentUser)return;
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>{
-    db.collection('users').doc(currentUser.uid).set({data:JSON.stringify(APP)})
-      .catch(e=>console.error('저장 실패:',e));
-  },1500);
+  saveTimer=setTimeout(saveToFirestore,1500);
 };
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&currentUser){
+    clearTimeout(saveTimer);
+    saveToFirestore();
+  }
+});
 
 function makeProject(name='새 프로젝트',groups=[],viewMode='day'){
   return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[]};
@@ -1455,8 +1464,12 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('logoutBtn').style.display='';
     try{
       const snap=await db.collection('users').doc(user.uid).get();
-      if(snap.exists&&snap.data().data)APP=JSON.parse(snap.data().data);
-      else{try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e){}}
+      let fsData=null,lsData=null;
+      if(snap.exists&&snap.data().data){try{fsData=JSON.parse(snap.data().data);}catch(e){}}
+      try{const s=localStorage.getItem('wbs_app');if(s)lsData=JSON.parse(s);}catch(e){}
+      if(fsData&&lsData){APP=(fsData._savedAt||0)>=(lsData._savedAt||0)?fsData:lsData;}
+      else if(fsData){APP=fsData;}
+      else if(lsData){APP=lsData;}
     }catch(e){
       try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e2){}
     }
