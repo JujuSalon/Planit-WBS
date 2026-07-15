@@ -661,7 +661,7 @@ function switchProject(id){
   document.getElementById('bw').classList.toggle('active',S.viewMode==='week');
   render();
 }
-function newProject(){const p=makeProject();APP.projects.push(p);setActive(p.id);save();closeProjPanel();renderProjSelector();render();openPM(p.id);}
+function newProject(){const p=makeDefaultProject();APP.projects.push(p);setActive(p.id);save();closeProjPanel();renderProjSelector();render();openPM(p.id);}
 function copyProject(id){
   const src=APP.projects.find(p=>p.id===id);if(!src)return;
   const copy=JSON.parse(JSON.stringify(src));
