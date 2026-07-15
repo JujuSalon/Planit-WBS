@@ -164,11 +164,10 @@ body.share-mode .cv:hover{background:none}
 .req-btn{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:none;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer}
 .req-btn-send{background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:1px 5px;border-radius:4px;cursor:pointer;line-height:1.6}
 .req-btn-send:hover{border-color:var(--primary);color:var(--primary)}
-.req-cell{position:relative}
-.req-cell .req-prog{display:block}
-.req-cell .req-btn-send{display:none;position:absolute;inset:0;width:100%;height:100%;border-radius:0;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.req-cell{display:flex;align-items:center;justify-content:center}
+.req-cell .req-btn-send{display:none}
 .req-cell:hover .req-prog{display:none}
-.req-cell:hover .req-btn-send{display:flex;align-items:center;justify-content:center}
+.req-cell:hover .req-btn-send{display:inline-flex}
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:9px;font-weight:700;cursor:default;flex-shrink:0;position:relative}
 .info-icon .info-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;font-size:11px;font-weight:400;padding:7px 10px;border-radius:7px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
 .info-icon .info-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#2d3748;border-top:none}
