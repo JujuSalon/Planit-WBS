@@ -444,6 +444,22 @@ body.share-mode .st-badge:hover{filter:none}
 
 <script>
 // ═══════════════════════════════════════
+// Mobile detection
+// ═══════════════════════════════════════
+(function(){
+  const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<768;
+  if(isMobile){
+    document.body.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:32px;text-align:center;font-family:inherit;background:#f8f9ff">
+      <div style="font-size:40px;margin-bottom:16px">🚧</div>
+      <h1 style="font-size:20px;font-weight:800;color:#1a202c;margin:0 0 8px">Planit WBS</h1>
+      <p style="font-size:14px;color:#4361ee;font-weight:600;margin:0 0 16px">모바일 버전 준비 중</p>
+      <p style="font-size:13px;color:#718096;line-height:1.7;margin:0">현재 PC 환경에 최적화되어 있습니다.<br>데스크탑 브라우저에서 이용해주세요.</p>
+    </div>`;
+    return;
+  }
+})();
+
+// ═══════════════════════════════════════
 // Firebase
 // ═══════════════════════════════════════
 firebase.initializeApp({
