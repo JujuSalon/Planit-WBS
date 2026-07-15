@@ -1318,7 +1318,7 @@ function render(){
 
       const tac=tr.insertCell();tac.className='s6';
       const taP=task.actualEndDate?parse(task.actualEndDate):null;
-      tac.innerHTML=`<div class="cv ${taP?'act':''}">${sdf(taP)}</div>`;
+      tac.innerHTML=`<div class="cv">${sdf(taP)}</div>`;
       tac.addEventListener('click',()=>{startEdit(tac,'date',task.actualEndDate||'',v=>{const t=findTask(tid);if(t){t.actualEndDate=v||null;if(v)t.status='완료';save();}render();});});
 
       // 상태 — click cycles 대기→진행중→완료→대기
