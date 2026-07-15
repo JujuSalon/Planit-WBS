@@ -524,6 +524,23 @@ const save=()=>{
 function makeProject(name='새 프로젝트',groups=[],viewMode='day'){
   return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[]};
 }
+function makeDefaultProject(){
+  const p=makeProject('샘플 프로젝트');
+  const d=n=>fmt(addD(tod(),n));
+  p.groups=[
+    {id:uid(),name:'기획',color:'#4361ee',tasks:[
+      {id:uid(),name:'요구사항 정의',md:3,startDate:d(-5),expectedEndDate:d(0),actualEndDate:d(-1),link:null,status:'완료',actualProgress:100,assignee:'김기획'},
+      {id:uid(),name:'프로젝트 일정 수립',md:2,startDate:d(-1),expectedEndDate:d(4),actualEndDate:null,link:null,status:'진행중',actualProgress:40,assignee:'김기획'},
+      {id:uid(),name:'이해관계자 인터뷰',md:1,startDate:d(3),expectedEndDate:d(7),actualEndDate:null,link:null,status:'대기',actualProgress:null,assignee:'이기획'},
+    ]},
+    {id:uid(),name:'개발',color:'#06d6a0',tasks:[
+      {id:uid(),name:'화면 설계',md:5,startDate:d(5),expectedEndDate:d(12),actualEndDate:null,link:null,status:'대기',actualProgress:null,assignee:'박디자인'},
+      {id:uid(),name:'백엔드 API 개발',md:8,startDate:d(10),expectedEndDate:d(22),actualEndDate:null,link:null,status:'대기',actualProgress:null,assignee:'최개발'},
+      {id:uid(),name:'프론트엔드 개발',md:6,startDate:d(14),expectedEndDate:d(24),actualEndDate:null,link:null,status:'대기',actualProgress:null,assignee:'정개발'},
+    ]},
+  ];
+  return p;
+}
 function migrate(p){
   if(!p.customHols)p.customHols={};
   if(p.projectStart===undefined)p.projectStart=null;
@@ -543,7 +560,7 @@ function setActive(id){
 }
 function initApp(){
   if(!APP.projects||!APP.projects.length){
-    const p=makeProject();
+    const p=makeDefaultProject();
     APP={projects:[p],activeId:p.id};
   }
   if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))APP.activeId=APP.projects[0].id;
