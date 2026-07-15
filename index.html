@@ -152,10 +152,10 @@ body.locked .dc:hover{filter:none}
 .row-dragging{opacity:.4}
 
 .auto-col{background:#f5f6f8!important;cursor:default!important}
-.info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--muted);color:#fff;font-size:9px;font-weight:700;cursor:pointer;flex-shrink:0;position:relative}
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:9px;font-weight:700;cursor:default;flex-shrink:0;position:relative}
 .info-icon .info-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);background:#2d3748;color:#fff;font-size:11px;font-weight:400;padding:7px 10px;border-radius:7px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.5}
 .info-icon .info-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#2d3748;border-top:none}
-.info-icon.open .info-tip{display:block}
+.info-icon:hover .info-tip{display:block}
 #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#dc3545;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
 .auto-col:hover{filter:none!important}
 .cv{display:flex;align-items:center;padding:0 6px;height:100%;overflow:hidden;white-space:nowrap;font-size:12px;cursor:pointer}
@@ -229,7 +229,7 @@ body.locked .dc:hover{filter:none}
     <div class="sep"></div>
     <div style="display:flex;align-items:center;gap:4px">
       <span style="font-size:11px;color:var(--muted);white-space:nowrap">기준일</span>
-      <span class="info-icon" id="refDateInfo" onclick="this.classList.toggle('open')">i<div class="info-tip">기준일을 설정하면 해당 날짜 기준으로<br>예상진척률이 자동 계산됩니다.</div></span>
+      <span class="info-icon" id="refDateInfo">i<div class="info-tip">기준일을 설정하면 해당 날짜 기준으로<br>예상진척률이 자동 계산됩니다.</div></span>
       <input type="date" id="refDateInput" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer" oninput="setRefDate(this.value)">
     </div>
     <div class="sep"></div>
@@ -675,10 +675,7 @@ function renderProjSelector(){
 }
 function toggleProjPanel(){const p=document.getElementById('projPanel');p.classList.toggle('show');if(p.classList.contains('show'))renderProjSelector();}
 function closeProjPanel(){document.getElementById('projPanel').classList.remove('show');}
-document.addEventListener('click',e=>{
-  if(!document.getElementById('projWrap').contains(e.target))closeProjPanel();
-  if(!document.getElementById('refDateInfo').contains(e.target))document.getElementById('refDateInfo').classList.remove('open');
-});
+document.addEventListener('click',e=>{if(!document.getElementById('projWrap').contains(e.target))closeProjPanel();});
 function resetRefDate(){
   refDate=tod();
   const rdi=document.getElementById('refDateInput');
