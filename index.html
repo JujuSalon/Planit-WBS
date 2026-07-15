@@ -1069,7 +1069,7 @@ function render(){
   {const th=document.createElement('th');th.className='sdh';r1.appendChild(th);}
   LCOLS.forEach(([sc,lbl,left,,tip])=>{
     const th=document.createElement('th');
-    th.className=sc;th.style.left=left+'px';th.style.textAlign='left';th.style.paddingLeft='6px';
+    th.className=sc;th.style.left=left+'px';th.style.textAlign='center';
     if(sc==='s8'||sc==='s10'){
       th.innerHTML=lbl;
     } else {th.textContent=lbl;}
