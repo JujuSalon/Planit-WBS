@@ -1900,6 +1900,7 @@ else auth.onAuthStateChanged(async user=>{
 // ═══════════════════════════════════════
 let adminClickCount=0,adminClickTimer=null;
 document.querySelector('header h1').addEventListener('click',()=>{
+  if(shareMode)return;
   adminClickCount++;
   clearTimeout(adminClickTimer);
   adminClickTimer=setTimeout(()=>{adminClickCount=0;},2000);
