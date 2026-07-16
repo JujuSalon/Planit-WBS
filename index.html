@@ -209,6 +209,10 @@ body.share-mode .st-badge:hover{filter:none}
 .fg label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
 .fg input{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .12s}
 .fg input:focus{border-color:var(--primary)}
+.fg select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .12s;background:var(--surface);color:var(--text);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;padding-right:32px;}
+.fg select:focus{border-color:var(--primary)}
+.fg input[type=date]{color:var(--text);padding-right:36px;}
+.fg input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55;width:18px;height:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;margin-right:2px;}
 .dr{display:flex;gap:6px;align-items:center}.dr input{flex:1}.dr span{color:var(--muted);font-size:13px}
 .mf{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
 .mf-r{display:flex;gap:8px}
@@ -229,7 +233,7 @@ body.share-mode .st-badge:hover{filter:none}
 .ms-color-btn.sel{border-color:#333}
 
 /* Mobile card layout */
-#mobileView{padding:8px;display:flex;flex-direction:column;gap:4px;min-height:100%}
+#mobileView{padding:8px;padding-bottom:32px;display:flex;flex-direction:column;gap:4px;min-height:100%}
 .mob-group-hd{display:flex;flex-direction:column;padding:10px 12px 8px;border-radius:8px 8px 0 0;margin-top:8px}
 .mob-group-hd:first-child{margin-top:0}
 .mob-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
@@ -482,6 +486,14 @@ body.share-mode .st-badge:hover{filter:none}
     <h2 id="tTitle">업무 추가</h2>
     <div class="fg"><label>업무명</label><input id="tName" placeholder="업무 이름"/></div>
     <div class="fg"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
+    <div class="fg" id="tStatusFg">
+      <label>상태</label>
+      <select id="tStatus">
+        <option value="대기">대기</option>
+        <option value="진행중">진행중</option>
+        <option value="완료">완료</option>
+      </select>
+    </div>
     <div class="fg">
       <label>시작일 ~ 예상종료일</label>
       <div class="dr"><input id="tS" type="date"/><span>~</span><input id="tEE" type="date"/></div>
@@ -1574,13 +1586,13 @@ function renderMobile(){
             progBlock.appendChild(expRow);
           }
           if(actPct!=null){
+            const barColor=st==='delay'?'#ef476f':st==='warn'?'#fbbf24':g.color;
             const actRow=document.createElement('div');actRow.className='mob-prog-row';
-            actRow.innerHTML=`<span class="mob-prog-lbl">실제</span><div class="mob-prog-track"><div class="mob-prog-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div><span class="mob-prog-val">${actPct}%</span>`;
+            actRow.innerHTML=`<span class="mob-prog-lbl">실제</span><div class="mob-prog-track"><div class="mob-prog-fill" style="width:${Math.min(actPct,100)}%;background:${barColor}"></div></div><span class="mob-prog-val" style="color:${barColor}">${actPct}%</span>`;
             progBlock.appendChild(actRow);
           }
           r3.appendChild(progBlock);
         }
-        if(st) r3.insertAdjacentHTML('beforeend',STATUS_BADGE[st]);
         card.appendChild(r3);
       }
       mv.appendChild(card);
@@ -2030,6 +2042,8 @@ function openTME(tid){
   document.getElementById('tEE').value=task.expectedEndDate||'';
   document.getElementById('tAE').value=task.actualEndDate||'';
   const expPct=calcExpectedProgress(task);
+  document.getElementById('tStatus').value=task.status||'대기';
+  document.getElementById('tStatusFg').style.display='';
   document.getElementById('tExpProgVal').textContent=expPct!=null?`${expPct}%`:'-';
   document.getElementById('tActProg').value=task.actualProgress!=null?task.actualProgress:'';
   document.getElementById('tExpProgFg').style.display='';
@@ -2046,6 +2060,8 @@ function openTMNew(gid){
   document.getElementById('tS').value='';
   document.getElementById('tEE').value='';
   document.getElementById('tAE').value='';
+  document.getElementById('tStatus').value='대기';
+  document.getElementById('tStatusFg').style.display='';
   document.getElementById('tExpProgFg').style.display='none';
   document.getElementById('tActProgFg').style.display='none';
   document.getElementById('tLink').value='';
@@ -2063,12 +2079,13 @@ function saveTask(){
   const link=document.getElementById('tLink').value.trim()||null;
   const actProgRaw=document.getElementById('tActProg').value;
   const actualProgress=actProgRaw!==''?Math.min(100,Math.max(0,parseInt(actProgRaw)||0)):null;
+  const status=document.getElementById('tStatus').value||'대기';
   if(editTid){
     const t=findTask(editTid);
-    if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;t.actualProgress=actualProgress;if(actualEndDate)t.status='완료';}
+    if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;t.actualProgress=actualProgress;t.status=actualEndDate?'완료':status;}
   } else {
     const g=findGroup(editGidForT);
-    if(g){g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:'대기',actualProgress:null});analytics.logEvent('task_create');}
+    if(g){g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:actualEndDate?'완료':status,actualProgress:null});analytics.logEvent('task_create');}
   }
   save();closeTM();render();
 }
