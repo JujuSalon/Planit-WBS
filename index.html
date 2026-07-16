@@ -471,7 +471,8 @@ body.share-mode .st-badge:hover{filter:none}
       <button class="btn btn-danger" onclick="clearAdminNotice()">공지 해제</button>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="closeAdminNoticeModal()">취소</button>
-        <button class="btn btn-primary" onclick="sendAdminNotice()">공지 발송</button>
+        <button class="btn" onclick="sendAdminNotice(false)">저장</button>
+        <button class="btn btn-primary" onclick="sendAdminNotice(true)">새 공지 발송</button>
       </div>
     </div>
   </div>
@@ -484,8 +485,7 @@ body.share-mode .st-badge:hover{filter:none}
     <h2 style="margin-bottom:6px">업데이트 안내</h2>
     <p class="sub" style="margin-bottom:16px">Planit WBS에 새로운 업데이트가 있습니다.</p>
     <p id="noticePopupText" style="font-size:13px;line-height:1.8;color:var(--text);margin-bottom:24px;white-space:pre-wrap;text-align:left;background:var(--bg);border-radius:8px;padding:12px 14px"></p>
-    <div style="display:flex;justify-content:center;gap:12px">
-      <button class="btn" onclick="dismissNotice()">나중에</button>
+    <div style="display:flex;justify-content:center">
       <button class="btn btn-primary" onclick="updateAndReload()">업데이트</button>
     </div>
   </div>
@@ -1949,10 +1949,14 @@ function openAdminNoticeModal(){
   document.getElementById('adminNoticeModal').classList.add('show');
 }
 function closeAdminNoticeModal(){document.getElementById('adminNoticeModal').classList.remove('show');}
-function sendAdminNotice(){
+function sendAdminNotice(isNew){
   const msg=document.getElementById('adminNoticeText').value.trim();if(!msg)return;
-  db.collection('notices').doc('current').set({active:true,message:msg,sentAt:Date.now()})
-    .then(()=>{showToast('공지가 발송되었습니다.');closeAdminNoticeModal();})
+  const update={active:true,message:msg};
+  if(isNew)update.sentAt=Date.now();
+  db.collection('notices').doc('current').get().then(snap=>{
+    const sentAt=(snap.exists&&snap.data().sentAt)||Date.now();
+    return db.collection('notices').doc('current').set({...update,sentAt:isNew?update.sentAt:sentAt});
+  }).then(()=>{showToast(isNew?'새 공지가 발송되었습니다.':'공지가 저장되었습니다.');closeAdminNoticeModal();})
     .catch(e=>showToast('오류: '+e.message));
 }
 function clearAdminNotice(){
@@ -1974,16 +1978,13 @@ function checkNotice(){
     document.getElementById('noticePopup').classList.add('show');
   }).catch(()=>{});
 }
-function dismissNotice(){
-  db.collection('notices').doc('current').get().then(snap=>{
-    if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
-  }).catch(()=>{});
-  document.getElementById('noticePopup').classList.remove('show');
-}
+
 function updateAndReload(){
   db.collection('notices').doc('current').get().then(snap=>{
     if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
-  }).catch(()=>{}).finally(()=>location.reload());
+  }).catch(()=>{}).finally(()=>{
+    fetch(location.pathname,{cache:'no-store'}).catch(()=>{}).finally(()=>location.reload());
+  });
 }
 </script>
 </body>
