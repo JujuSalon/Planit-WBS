@@ -243,7 +243,7 @@ body.share-mode .st-badge:hover{filter:none}
   .h-day th:not([class^="s"]){display:none!important;}
 
   /* 모달 */
-  .modal{width:92vw!important;padding:20px 16px!important;}
+  .modal{width:92vw!important;padding:20px 16px!important;max-height:90vh;overflow-y:auto;}
   .proj-panel{min-width:220px;}
 }
 </style>
@@ -435,6 +435,24 @@ body.share-mode .st-badge:hover{filter:none}
       <div class="mf-r">
         <button class="btn btn-danger" id="gDelBtn" style="display:none" onclick="delGroup()">삭제</button>
         <button class="btn btn-primary" onclick="saveGroup()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Link Edit Modal -->
+<div class="overlay" id="linkModal">
+  <div class="modal" style="width:380px">
+    <h2>링크 수정</h2>
+    <div class="fg" style="margin-top:12px">
+      <label>URL</label>
+      <input id="linkInput" type="url" placeholder="https://..."/>
+    </div>
+    <div class="mf">
+      <button class="btn btn-danger" onclick="saveLinkModal(null)">삭제</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeLinkModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveLinkModal()">저장</button>
       </div>
     </div>
   </div>
@@ -1630,16 +1648,25 @@ function render(){
 
       const tlc=tr.insertCell();tlc.className='s1';
       if(task.link){
-        tlc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:2px;height:100%"><a href="${esc(task.link)}" target="_blank" style="color:var(--primary);display:inline-flex;align-items:center;text-decoration:none;line-height:1" title="${esc(task.link)}" onclick="event.stopPropagation()">${IC.link}</a></div>`;
+        tlc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%"><a href="${esc(task.link)}" target="_blank" style="color:var(--primary);display:inline-flex;align-items:center;text-decoration:none;line-height:1" title="${esc(task.link)}" onclick="event.stopPropagation()">${IC.link}</a></div>`;
       }
       tlc.style.cursor='pointer';
-      tlc.addEventListener('click',e=>{
-        if(shareMode||e.target.closest('a'))return;
-        startEdit(tlc,'url',task.link||'',v=>{
-          const t=findTask(tid);if(!t)return;
-          t.link=v||null;save();render();
+      if(!shareMode){
+        let linkHoldTimer=null;
+        tlc.addEventListener('mousedown',e=>{
+          e.preventDefault();
+          linkHoldTimer=setTimeout(()=>{linkHoldTimer=null;openLinkModal(tid);},700);
         });
-      });
+        ['mouseup','mouseleave'].forEach(ev=>tlc.addEventListener(ev,()=>{clearTimeout(linkHoldTimer);linkHoldTimer=null;}));
+        tlc.addEventListener('touchstart',e=>{
+          linkHoldTimer=setTimeout(()=>{linkHoldTimer=null;openLinkModal(tid);},700);
+        },{passive:true});
+        ['touchend','touchcancel'].forEach(ev=>tlc.addEventListener(ev,()=>{clearTimeout(linkHoldTimer);linkHoldTimer=null;}));
+        tlc.addEventListener('click',e=>{
+          if(e.target.closest('a'))return;
+          if(!task.link)openLinkModal(tid);
+        });
+      }
 
       const tasc=tr.insertCell();tasc.className='s2';
       tasc.innerHTML=`<div class="cv">${esc(task.assignee||'')}</div>`;
@@ -1947,6 +1974,26 @@ adminH1.addEventListener('mousedown',(e)=>{
 ['mouseup','mouseleave'].forEach(ev=>adminH1.addEventListener(ev,()=>{
   clearTimeout(adminHoldTimer);adminHoldTimer=null;
 }));
+// ═══════════════════════════════════════
+// Link Modal
+// ═══════════════════════════════════════
+let linkEditTid=null;
+function openLinkModal(tid){
+  linkEditTid=tid;
+  const t=findTask(tid);
+  document.getElementById('linkInput').value=t?.link||'';
+  document.getElementById('linkModal').classList.add('show');
+  setTimeout(()=>document.getElementById('linkInput').focus(),50);
+}
+function closeLinkModal(){document.getElementById('linkModal').classList.remove('show');linkEditTid=null;}
+function saveLinkModal(val){
+  const t=findTask(linkEditTid);if(!t)return;
+  t.link=val===null?null:(document.getElementById('linkInput').value.trim()||null);
+  save();closeLinkModal();render();
+}
+document.getElementById('linkInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)saveLinkModal();});
+document.getElementById('linkModal').addEventListener('click',function(e){if(e.target===this)closeLinkModal();});
+
 function openAdminPwModal(){
   document.getElementById('adminPwInput').value='';
   document.getElementById('adminPwError').style.display='none';
