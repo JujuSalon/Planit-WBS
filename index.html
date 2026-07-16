@@ -211,7 +211,7 @@ body.share-mode .st-badge:hover{filter:none}
 .fg input:focus{border-color:var(--primary)}
 .fg select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .12s;background:var(--surface);color:var(--text);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;padding-right:32px;}
 .fg select:focus{border-color:var(--primary)}
-.fg input[type=date]{color:var(--text);padding-right:36px;}
+.fg input[type=date]{color:var(--text);padding-right:36px;background:var(--surface);color-scheme:light;}
 .fg input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55;width:18px;height:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;margin-right:2px;}
 .dr{display:flex;gap:6px;align-items:center}.dr input{flex:1}.dr span{color:var(--muted);font-size:13px}
 .mf{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
@@ -485,21 +485,22 @@ body.share-mode .st-badge:hover{filter:none}
   <div class="modal">
     <h2 id="tTitle">업무 추가</h2>
     <div class="fg"><label>업무명</label><input id="tName" placeholder="업무 이름"/></div>
-    <div class="fg"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
-    <div class="fg" id="tStatusFg">
-      <label>상태</label>
-      <select id="tStatus">
-        <option value="대기">대기</option>
-        <option value="진행중">진행중</option>
-        <option value="완료">완료</option>
-      </select>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="fg" style="flex:1;margin-bottom:0"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
+      <div class="fg" id="tStatusFg" style="flex:1;margin-bottom:0">
+        <label>상태</label>
+        <select id="tStatus">
+          <option value="대기">대기</option>
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+        </select>
+      </div>
     </div>
-    <div class="fg">
-      <label>시작일 ~ 예상종료일</label>
-      <div class="dr"><input id="tS" type="date"/><span>~</span><input id="tEE" type="date"/></div>
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="fg" style="flex:1;margin-bottom:0"><label>시작일</label><input id="tS" type="date"/></div>
+      <div class="fg" style="flex:1;margin-bottom:0"><label>예상종료일</label><input id="tEE" type="date"/></div>
     </div>
     <div class="fg"><label>실종료일</label><input id="tAE" type="date"/></div>
-    <div class="fg" id="tExpProgFg"><label>예상진척률</label><div id="tExpProgVal" style="font-size:13px;padding:5px 0;color:var(--muted)">-</div></div>
     <div class="fg" id="tActProgFg"><label>실진척률</label><input id="tActProg" type="number" min="0" max="100" step="1" placeholder="0 ~ 100"/></div>
     <div class="fg"><label>업무 링크 <span style="font-weight:400;text-transform:none;font-size:11px">(Jira, Notion 등)</span></label><input id="tLink" type="url" placeholder="https://..."/></div>
     <div class="mf">
@@ -2041,12 +2042,9 @@ function openTME(tid){
   document.getElementById('tS').value=task.startDate||'';
   document.getElementById('tEE').value=task.expectedEndDate||'';
   document.getElementById('tAE').value=task.actualEndDate||'';
-  const expPct=calcExpectedProgress(task);
   document.getElementById('tStatus').value=task.status||'대기';
   document.getElementById('tStatusFg').style.display='';
-  document.getElementById('tExpProgVal').textContent=expPct!=null?`${expPct}%`:'-';
   document.getElementById('tActProg').value=task.actualProgress!=null?task.actualProgress:'';
-  document.getElementById('tExpProgFg').style.display='';
   document.getElementById('tActProgFg').style.display='';
   document.getElementById('tLink').value=task.link||'';
   document.getElementById('tDelBtn').style.display='';
@@ -2062,7 +2060,6 @@ function openTMNew(gid){
   document.getElementById('tAE').value='';
   document.getElementById('tStatus').value='대기';
   document.getElementById('tStatusFg').style.display='';
-  document.getElementById('tExpProgFg').style.display='none';
   document.getElementById('tActProgFg').style.display='none';
   document.getElementById('tLink').value='';
   document.getElementById('tDelBtn').style.display='none';
