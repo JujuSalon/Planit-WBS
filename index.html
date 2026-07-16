@@ -815,7 +815,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 function makeProject(name='새 프로젝트',groups=[],viewMode='day'){
-  return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[]};
+  return{id:uid(),name,groups,viewMode,viewStart:fmt(addD(tod(),-7)),customHols:{},milestones:[],locked:false};
 }
 function makeDefaultProject(){
   const p=makeProject('샘플 프로젝트');
@@ -839,6 +839,7 @@ function migrate(p){
   if(p.projectStart===undefined)p.projectStart=null;
   if(p.projectEnd===undefined)p.projectEnd=null;
   if(!p.milestones)p.milestones=[];
+  if(p.locked===undefined)p.locked=false;
   (p.groups||[]).forEach(g=>(g.tasks||[]).forEach(t=>{
     if(t.endDate&&!t.expectedEndDate){t.expectedEndDate=t.endDate;delete t.endDate;}
     if(!t.status)t.status='대기';
@@ -850,6 +851,7 @@ function migrate(p){
 function setActive(id){
   APP.activeId=id;S=APP.projects.find(p=>p.id===id);
   if(S&&!S.viewStart)S.viewStart=fmt(addD(tod(),-7));
+  if(!shareMode)applyLock(S?!!S.locked:false);
 }
 function initApp(){
   if(!APP.projects)APP.projects=[];
@@ -864,7 +866,6 @@ function initApp(){
   const rdi=document.getElementById('refDateInput');
   rdi.value=fmt(tod());rdi.style.borderColor='var(--primary)';
   renderProjSelector();render();
-  toggleLock();
 }
 
 // ═══════════════════════════════════════
@@ -1280,8 +1281,8 @@ function adjustZoom(delta){
   zoomLevel=Math.min(150,Math.max(50,zoomLevel+delta));
   applyZoom();
 }
-function toggleLock(){
-  locked=!locked;
+function applyLock(state){
+  locked=state;
   document.body.classList.toggle('locked',locked);
   const btn=document.getElementById('lockBtn');
   const lockSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
@@ -1289,6 +1290,10 @@ function toggleLock(){
   btn.innerHTML=locked?lockSvg+' 차트잠금':unlockSvg+' 편집중';
   btn.style.color=locked?'#dc3545':'';
   btn.style.borderColor=locked?'#dc3545':'';
+}
+function toggleLock(){
+  applyLock(!locked);
+  if(S){S.locked=locked;save();}
 }
 function startEdit(td,type,rawVal,onSave){
   if(shareMode||td._editing)return;td._editing=true;
@@ -1661,8 +1666,15 @@ function onMD(e,tid,d){
   drag.on=true;drag.tid=tid;drag.moved=false;drag.startD=new Date(d);
   const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
   if(ts&&te&&cellInRange(d,ts,te)){
-    drag.mode='move';drag.dur=diff(ts,te);drag.inBar=true;
-    drag.offset=S.viewMode==='week'?Math.round(diff(monOf(ts),d)/7):diff(ts,d);
+    const dur=diff(ts,te);
+    const isSingle=S.viewMode==='week'?dur===6:dur===0;
+    if(isSingle){
+      // 셀 하나짜리: 드래그로 기간 확장
+      drag.mode='extend';drag.anchor=new Date(ts);drag.inBar=true;
+    } else {
+      drag.mode='move';drag.dur=dur;drag.inBar=true;
+      drag.offset=S.viewMode==='week'?Math.round(diff(monOf(ts),d)/7):diff(ts,d);
+    }
   } else {
     drag.mode='new';drag.anchor=new Date(d);drag.inBar=false;
     setDates(tid,d,S.viewMode==='week'?addD(d,6):d,true);
@@ -1671,12 +1683,18 @@ function onMD(e,tid,d){
 function onME(tid,d){
   if(!drag.on||drag.tid!==tid)return;
   drag.moved=true;
-  if(drag.mode==='new'){const start=drag.anchor<=d?drag.anchor:d,end=drag.anchor<=d?d:drag.anchor;setDates(tid,start,S.viewMode==='week'?addD(end,6):end,true);}
-  else{const ns=S.viewMode==='week'?addD(d,-drag.offset*7):addD(d,-drag.offset);setDates(tid,ns,addD(ns,drag.dur),true);}
+  if(drag.mode==='new'||drag.mode==='extend'){
+    const start=drag.anchor<=d?drag.anchor:d,end=drag.anchor<=d?d:drag.anchor;
+    setDates(tid,start,S.viewMode==='week'?addD(end,6):end,true);
+  } else {
+    const ns=S.viewMode==='week'?addD(d,-drag.offset*7):addD(d,-drag.offset);
+    setDates(tid,ns,addD(ns,drag.dur),true);
+  }
 }
 document.addEventListener('mouseup',()=>{
   if(drag.on){
-    if(!drag.moved&&drag.inBar){
+    // move 모드에서 드래그 없이 클릭만 한 경우: 클릭한 날로 이동
+    if(!drag.moved&&drag.inBar&&drag.mode==='move'){
       const end=S.viewMode==='week'?addD(drag.startD,6):drag.startD;
       setDates(drag.tid,drag.startD,end);
     }
