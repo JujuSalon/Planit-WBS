@@ -1030,7 +1030,7 @@ function saveProjName(){
   }
   closePM();
 }
-document.getElementById('pName').addEventListener('keydown',e=>{if(e.key==='Enter')saveProjName();});
+document.getElementById('pName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveProjName();}});
 document.getElementById('pModal').addEventListener('click',function(e){if(e.target===this)closePM();});
 
 // ═══════════════════════════════════════
