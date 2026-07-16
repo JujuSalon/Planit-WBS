@@ -228,6 +228,21 @@ body.share-mode .st-badge:hover{filter:none}
 .ms-color-btn:hover{transform:scale(1.15)}
 .ms-color-btn.sel{border-color:#333}
 
+/* Mobile card layout */
+#mobileView{padding:8px;display:flex;flex-direction:column;gap:4px;min-height:100%}
+.mob-group-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px;border-radius:8px 8px 0 0;margin-top:8px}
+.mob-group-hd:first-child{margin-top:0}
+.mob-group-meta{font-size:11px;color:var(--muted);padding:0 12px 8px;border-radius:0 0 0 0}
+.mob-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.mob-card-r1{display:flex;align-items:center;gap:6px;min-width:0}
+.mob-card-name{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mob-card-r2{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mob-card-r3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mob-card-prog{display:flex;align-items:center;gap:4px;font-size:11px}
+.mob-card-bar{width:50px;height:4px;background:#e9ecef;border-radius:2px;overflow:hidden;flex-shrink:0}
+.mob-card-bar-fill{height:100%;border-radius:2px}
+.mob-card-acts{display:flex;align-items:center;gap:4px;flex-shrink:0}
+
 @media (max-width: 767px) {
   /* Header */
   header{padding:0 10px;gap:6px;}
@@ -337,6 +352,7 @@ body.share-mode .st-badge:hover{filter:none}
 </div>
 <div class="gantt-wrap" id="gw">
   <table id="gt"><thead id="gh"></thead><tbody id="gb"></tbody></table>
+  <div id="mobileView" style="display:none"></div>
 </div>
 
 <!-- Project Settings Modal -->
@@ -443,14 +459,14 @@ body.share-mode .st-badge:hover{filter:none}
 <!-- Link Edit Modal -->
 <div class="overlay" id="linkModal">
   <div class="modal" style="width:380px">
-    <h2>링크 수정</h2>
+    <h2 id="linkModalTitle">링크 추가</h2>
     <div class="fg" style="margin-top:12px">
       <label>URL</label>
       <input id="linkInput" type="url" placeholder="https://..."/>
     </div>
     <div class="mf">
-      <button class="btn btn-danger" onclick="saveLinkModal(null)">삭제</button>
-      <div style="display:flex;gap:8px">
+      <button class="btn btn-danger" id="linkDeleteBtn" onclick="saveLinkModal(null)" style="display:none">삭제</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn" onclick="closeLinkModal()">취소</button>
         <button class="btn btn-primary" onclick="saveLinkModal()">저장</button>
       </div>
@@ -1462,6 +1478,103 @@ function cellStyle(d,ts,te,gColor,isDone){
 // ═══════════════════════════════════════
 // Render
 // ═══════════════════════════════════════
+function renderMobile(){
+  const mv=document.getElementById('mobileView');
+  mv.innerHTML='';
+  if(!S.groups.length){
+    mv.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--muted)">그룹을 추가해 WBS를 시작하세요.<br><br><button class="btn btn-primary" onclick="openGM()">+ 그룹 추가</button></div>';
+    return;
+  }
+  S.groups.forEach(g=>{
+    const totalMd=g.tasks.reduce((a,t)=>a+(Number(t.md)||0),0);
+    const validS=g.tasks.map(t=>t.startDate).filter(Boolean).sort();
+    const validEE=g.tasks.map(t=>t.expectedEndDate).filter(Boolean).sort();
+    // Group header
+    const ghd=document.createElement('div');
+    ghd.className='mob-group-hd';
+    ghd.style.cssText=`background:${hex2rgba(g.color,.08)};border-left:3px solid ${g.color}`;
+    ghd.innerHTML=`<div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+      <div style="width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></div>
+      <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span>
+      ${totalMd?`<span style="font-size:11px;color:var(--muted);flex-shrink:0">${totalMd}MD</span>`:''}
+    </div>
+    <div style="display:flex;gap:4px;flex-shrink:0">
+      ${!locked&&!shareMode?`<button class="ic" onclick="openTM('${g.id}')" title="업무 추가">${IC.plus}</button>
+      <button class="ic" onclick="openGME('${g.id}')" title="그룹 편집">${IC.pencil}</button>`:''}
+    </div>`;
+    mv.appendChild(ghd);
+    if(validS.length||validEE.length){
+      const gm=document.createElement('div');
+      gm.className='mob-group-meta';
+      gm.style.cssText=`background:${hex2rgba(g.color,.04)};border-left:3px solid ${g.color};padding:0 12px 8px`;
+      const parts=[];
+      if(validS.length) parts.push(sdf(parse(validS[0])));
+      if(validEE.length) parts.push(sdf(parse(validEE[validEE.length-1])));
+      gm.textContent=parts.join(' ~ ');
+      mv.appendChild(gm);
+    }
+    if(!g.tasks.length){
+      const em=document.createElement('div');
+      em.style.cssText='text-align:center;padding:12px;color:var(--muted);font-size:12px';
+      em.textContent='업무가 없습니다';
+      mv.appendChild(em);
+    }
+    g.tasks.forEach(task=>{
+      const tid=task.id,isDone=task.status==='완료';
+      const expPct=calcExpectedProgress(task);
+      const actPct=isDone?(task.actualProgress!=null?task.actualProgress:100):task.actualProgress;
+      const st=scheduleStatus(expPct,actPct,task.status);
+      const card=document.createElement('div');
+      card.className='mob-card';
+      // Row 1: name + status + link
+      const r1=document.createElement('div');r1.className='mob-card-r1';
+      const nameEl=document.createElement('span');nameEl.className='mob-card-name';nameEl.textContent=task.name;
+      const badge=document.createElement('span');
+      badge.className='st-badge '+(STATUS_CLASS[task.status||'대기']||'st-wait');
+      badge.textContent=task.status||'대기';
+      if(!locked&&!shareMode){badge.style.cursor='pointer';badge.addEventListener('click',e=>{e.stopPropagation();const t=findTask(tid);if(!t)return;t.status=nextStatus(t.status);save();renderMobile();});}
+      r1.append(nameEl,badge);
+      if(task.link){
+        const la=document.createElement('a');la.href=task.link;la.target='_blank';
+        la.style.cssText='color:var(--primary);display:inline-flex;align-items:center;flex-shrink:0';
+        la.onclick=e=>e.stopPropagation();la.innerHTML=IC.link;r1.appendChild(la);
+      } else if(!locked&&!shareMode){
+        const addLinkBtn=document.createElement('button');addLinkBtn.className='ic';addLinkBtn.title='링크 추가';
+        addLinkBtn.innerHTML=IC.link;addLinkBtn.style.opacity='.3';
+        addLinkBtn.addEventListener('click',e=>{e.stopPropagation();openLinkModal(tid);});
+        r1.appendChild(addLinkBtn);
+      }
+      card.appendChild(r1);
+      // Row 2: meta
+      const metaParts=[];
+      if(task.assignee) metaParts.push(esc(task.assignee));
+      if(task.md!=null) metaParts.push(`${task.md}MD`);
+      const dr=[];
+      if(task.startDate) dr.push(sdf(parse(task.startDate)));
+      if(task.expectedEndDate) dr.push(sdf(parse(task.expectedEndDate)));
+      if(dr.length) metaParts.push(dr.join('~'));
+      if(task.actualEndDate) metaParts.push(`실종료 ${sdf(parse(task.actualEndDate))}`);
+      if(metaParts.length){
+        const r2=document.createElement('div');r2.className='mob-card-r2';r2.innerHTML=metaParts.join(' · ');card.appendChild(r2);
+      }
+      // Row 3: progress
+      if(expPct!=null||actPct!=null||st){
+        const r3=document.createElement('div');r3.className='mob-card-r3';
+        if(expPct!=null) r3.innerHTML+=`<span style="font-size:10px;color:var(--muted)">예상 ${expPct}%</span>`;
+        if(actPct!=null){
+          const pEl=document.createElement('div');pEl.className='mob-card-prog';
+          pEl.innerHTML=`<span style="font-size:11px;font-weight:600">${actPct}%</span><div class="mob-card-bar"><div class="mob-card-bar-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div>`;
+          if(!locked&&!shareMode){pEl.style.cursor='pointer';pEl.title='탭하여 수정';pEl.addEventListener('click',()=>{const cur=task.actualProgress!=null?String(task.actualProgress):'';startEdit(pEl,'number',cur,v=>{const t=findTask(tid);if(!t)return;t.actualProgress=v!=null&&v!==''?Math.min(100,Math.max(0,parseInt(v)||0)):null;save();renderMobile();});});}
+          r3.appendChild(pEl);
+        }
+        if(st) r3.innerHTML+=STATUS_BADGE[st];
+        card.appendChild(r3);
+      }
+      mv.appendChild(card);
+    });
+  });
+}
+
 function render(){
   const es=document.getElementById('emptyState'),gw=document.getElementById('gw');
   const hasProject=!!(S);
@@ -1471,6 +1584,13 @@ function render(){
   maybeListenRequests();
   if(!S){es.style.display='flex';gw.style.display='none';return;}
   es.style.display='none';gw.style.display='';
+  if(isMobile){
+    document.getElementById('gt').style.display='none';
+    document.getElementById('mobileView').style.display='';
+    renderMobile();return;
+  }
+  document.getElementById('gt').style.display='';
+  document.getElementById('mobileView').style.display='none';
   const dates=getDates(),T=tod(),CW=S.viewMode==='day'?32:52;
   const head=document.getElementById('gh'),body=document.getElementById('gb');
   const DOW=['일','월','화','수','목','금','토'];
@@ -1981,6 +2101,9 @@ let linkEditTid=null;
 function openLinkModal(tid){
   linkEditTid=tid;
   const t=findTask(tid);
+  const hasLink=!!(t?.link);
+  document.getElementById('linkModalTitle').textContent=hasLink?'링크 수정':'링크 추가';
+  document.getElementById('linkDeleteBtn').style.display=hasLink?'':'none';
   document.getElementById('linkInput').value=t?.link||'';
   document.getElementById('linkModal').classList.add('show');
   setTimeout(()=>document.getElementById('linkInput').focus(),50);
