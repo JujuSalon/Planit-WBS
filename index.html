@@ -1899,8 +1899,9 @@ else auth.onAuthStateChanged(async user=>{
 // Admin Notice
 // ═══════════════════════════════════════
 let adminClickCount=0,adminClickTimer=null;
-document.querySelector('header h1').addEventListener('click',()=>{
+document.querySelector('header h1').addEventListener('click',(e)=>{
   if(shareMode)return;
+  e.preventDefault();
   adminClickCount++;
   clearTimeout(adminClickTimer);
   adminClickTimer=setTimeout(()=>{adminClickCount=0;},2000);
