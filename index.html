@@ -211,7 +211,7 @@ body.share-mode .st-badge:hover{filter:none}
 .fg input:focus{border-color:var(--primary)}
 .fg select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;font-family:inherit;transition:border-color .12s;background:var(--surface);color:var(--text);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;padding-right:32px;}
 .fg select:focus{border-color:var(--primary)}
-.fg input[type=date]{color:var(--text);padding-right:36px;background:var(--surface);color-scheme:light;}
+.fg input[type=date]{color:var(--text);padding-right:36px;background:var(--surface);color-scheme:light;-webkit-appearance:none;appearance:none;min-width:0;}
 .fg input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.55;width:18px;height:18px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;margin-right:2px;}
 .dr{display:flex;gap:6px;align-items:center}.dr input{flex:1}.dr span{color:var(--muted);font-size:13px}
 .mf{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
@@ -486,8 +486,8 @@ body.share-mode .st-badge:hover{filter:none}
     <h2 id="tTitle">업무 추가</h2>
     <div class="fg"><label>업무명</label><input id="tName" placeholder="업무 이름"/></div>
     <div style="display:flex;gap:10px;margin-bottom:12px">
-      <div class="fg" style="flex:1;margin-bottom:0"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
-      <div class="fg" id="tStatusFg" style="flex:1;margin-bottom:0">
+      <div class="fg" style="flex:1;min-width:0;margin-bottom:0"><label>MD</label><input id="tMd" type="number" min="0.5" step="0.5" placeholder="예: 3"/></div>
+      <div class="fg" id="tStatusFg" style="flex:1;min-width:0;margin-bottom:0">
         <label>상태</label>
         <select id="tStatus">
           <option value="대기">대기</option>
@@ -497,8 +497,8 @@ body.share-mode .st-badge:hover{filter:none}
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:12px">
-      <div class="fg" style="flex:1;margin-bottom:0"><label>시작일</label><input id="tS" type="date"/></div>
-      <div class="fg" style="flex:1;margin-bottom:0"><label>예상종료일</label><input id="tEE" type="date"/></div>
+      <div class="fg" style="flex:1;min-width:0;margin-bottom:0"><label>시작일</label><input id="tS" type="date"/></div>
+      <div class="fg" style="flex:1;min-width:0;margin-bottom:0"><label>예상종료일</label><input id="tEE" type="date"/></div>
     </div>
     <div class="fg"><label>실종료일</label><input id="tAE" type="date"/></div>
     <div class="fg" id="tActProgFg"><label>실진척률</label><input id="tActProg" type="number" min="0" max="100" step="1" placeholder="0 ~ 100"/></div>
