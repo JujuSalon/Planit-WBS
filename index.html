@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Planit WBS</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -233,7 +233,7 @@ body.share-mode .st-badge:hover{filter:none}
 .ms-color-btn.sel{border-color:#333}
 
 /* Mobile card layout */
-#mobileView{padding:8px;padding-bottom:32px;display:flex;flex-direction:column;gap:4px;min-height:100%}
+#mobileView{padding:8px;padding-bottom:calc(32px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:4px;min-height:100%}
 .mob-group-hd{display:flex;flex-direction:column;padding:10px 12px 8px;border-radius:8px 8px 0 0;margin-top:8px}
 .mob-group-hd:first-child{margin-top:0}
 .mob-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
@@ -260,6 +260,7 @@ body.share-mode .st-badge:hover{filter:none}
   .proj-panel-footer{display:none!important;}
   #emptyState .btn-primary{display:none!important;}
   .st-badge{pointer-events:none;-webkit-tap-highlight-color:transparent;}
+  .proj-item-acts button:not([title="공유 링크 복사"]){display:none!important;}
 
   /* 간트 날짜 컬럼만 숨김 */
   td.dc{display:none!important;}
@@ -982,6 +983,24 @@ function initApp(){
   const rdi=document.getElementById('refDateInput');
   rdi.value=fmt(tod());rdi.style.borderColor='var(--primary)';
   renderProjSelector();render();
+  if(isMobile&&currentUser&&!window._mobileSyncStarted){
+    window._mobileSyncStarted=true;
+    db.collection('users').doc(currentUser.uid).onSnapshot(snap=>{
+      if(!snap.exists||!snap.data().data)return;
+      try{
+        const fsData=JSON.parse(snap.data().data);
+        if((fsData._savedAt||0)>(APP._savedAt||0)){
+          APP=fsData;
+          if(!APP.projects)APP.projects=[];
+          APP.projects.forEach(migrate);
+          if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))
+            APP.activeId=APP.projects[0]?.id||null;
+          setActive(APP.activeId);
+          renderProjSelector();render();
+        }
+      }catch(e){}
+    },()=>{});
+  }
 }
 
 // ═══════════════════════════════════════
