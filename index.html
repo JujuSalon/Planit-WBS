@@ -1545,13 +1545,13 @@ function renderMobile(){
       const badge=document.createElement('span');
       badge.className='st-badge '+(STATUS_CLASS[task.status||'대기']||'st-wait');
       badge.textContent=task.status||'대기';
-      if(!locked&&!shareMode){badge.style.cursor='pointer';badge.addEventListener('click',e=>{e.stopPropagation();const t=findTask(tid);if(!t)return;t.status=nextStatus(t.status);save();renderMobile();});}
-      r1.append(nameEl,badge);
       if(!locked&&!shareMode){
         const editBtn=document.createElement('button');editBtn.className='ic';editBtn.title='업무 편집';
         editBtn.innerHTML=IC.pencil;editBtn.style.cssText='flex-shrink:0;opacity:.5';
         editBtn.addEventListener('click',e=>{e.stopPropagation();openTME(tid);});
-        r1.appendChild(editBtn);
+        r1.append(nameEl,editBtn,badge);
+      } else {
+        r1.append(nameEl,badge);
       }
       if(task.link){
         const la=document.createElement('a');la.href=task.link;la.target='_blank';
