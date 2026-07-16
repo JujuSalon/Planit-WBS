@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234361ee'/%3E%3Crect x='5' y='7' width='14' height='5' rx='2.5' fill='white'/%3E%3Crect x='10' y='14' width='17' height='5' rx='2.5' fill='white' opacity='.75'/%3E%3Crect x='5' y='21' width='11' height='5' rx='2.5' fill='white' opacity='.5'/%3E%3C/svg%3E">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -517,10 +518,12 @@ firebase.initializeApp({
   projectId:"planit-wbs",
   storageBucket:"planit-wbs.firebasestorage.app",
   messagingSenderId:"716097015036",
-  appId:"1:716097015036:web:dfb58e45d478e6220adb79"
+  appId:"1:716097015036:web:dfb58e45d478e6220adb79",
+  measurementId:"G-NE8H26BQ1J"
 });
 const auth=firebase.auth();
 const db=firebase.firestore();
+const analytics=firebase.analytics();
 let currentUser=null,saveTimer=null;
 
 function signInGoogle(){
@@ -531,6 +534,7 @@ function signInGoogle(){
 }
 function signOutGoogle(){
   if(!confirm('로그아웃 하시겠습니까?'))return;
+  analytics.logEvent('logout');
   auth.signOut();
 }
 
@@ -572,6 +576,7 @@ async function submitRequest(){
   try{
     await db.collection('requests').add(payload);
     localStorage.setItem('wbs_requester',requester);
+    analytics.logEvent('update_request_send',{type});
     closeReqModal();showToast('✓ 요청이 전송됐습니다');
   }catch(e){alert('요청 실패: '+e.message);}
 }
@@ -1014,6 +1019,7 @@ async function shareProject(id){
     save();
     const url=location.origin+location.pathname+'?share='+shareId;
     await navigator.clipboard.writeText(url);
+    analytics.logEvent('project_share');
     showToast('✓ 공유 링크가 복사됐습니다');
   }catch(e){console.error(e);alert('공유 실패: '+e.message);}
 }
@@ -1046,6 +1052,7 @@ function copyProject(id){
   copy.groups.forEach(g=>{g.id=uid();g.tasks.forEach(t=>t.id=uid());});
   APP.projects.splice(APP.projects.findIndex(p=>p.id===id)+1,0,copy);
   setActive(copy.id);save();closeProjPanel();renderProjSelector();render();
+  analytics.logEvent('project_copy');
 }
 function deleteProject(id){
   const p=APP.projects.find(x=>x.id===id);
@@ -1055,6 +1062,7 @@ function deleteProject(id){
     if(APP.projects.length)setActive(APP.projects[0].id);
     else{APP.activeId=null;S=null;}
   }
+  analytics.logEvent('project_delete');
   save();closeProjPanel();renderProjSelector();render();
 }
 function openPM(id){
@@ -1073,6 +1081,7 @@ function saveProjName(){
   if(editProjId===null){
     const p=makeDefaultProject();p.name=name;
     APP.projects.push(p);setActive(p.id);save();renderProjSelector();resetRefDate();render();
+    analytics.logEvent('project_create');
   }else{
     const p=APP.projects.find(x=>x.id===editProjId);if(p)p.name=name;
     save();renderProjSelector();
@@ -1133,6 +1142,7 @@ function addMilestone(){
   if(!date){document.getElementById('msDate').focus();return;}
   if(!S.milestones)S.milestones=[];
   S.milestones.push({id:uid(),date,name:name||'이벤트',color:selMsColor});
+  analytics.logEvent('milestone_add');
   save();renderMsList();render();
   document.getElementById('msDate').value='';
   document.getElementById('msName').value='';
@@ -1259,6 +1269,7 @@ function buildXlsx(rows,numDateCols){
   return zipPack([['[Content_Types].xml',ctXml],['_rels/.rels',rrXml],['xl/workbook.xml',wbXml],['xl/_rels/workbook.xml.rels',wrXml],['xl/worksheets/sheet1.xml',shXml],['xl/sharedStrings.xml',ssXml],['xl/styles.xml',stylesXml]]);
 }
 function exportXlsx(){
+  analytics.logEvent('excel_download');
   const dates=getDates();
   const rows=[];
   const H=v=>({v,h:1});const G=v=>({v,g:1});const T=v=>({v});const N=v=>({v,n:1});
@@ -1353,6 +1364,7 @@ function applyLock(state){
 function toggleLock(){
   applyLock(!locked);
   if(S){S.locked=locked;save();}
+  analytics.logEvent('lock_toggle',{state:locked?'locked':'editing'});
 }
 function startEdit(td,type,rawVal,onSave){
   if(shareMode||td._editing)return;td._editing=true;
@@ -1368,7 +1380,7 @@ function startEdit(td,type,rawVal,onSave){
 // ═══════════════════════════════════════
 // View control
 // ═══════════════════════════════════════
-function setView(m){S.viewMode=m;document.getElementById('bd').classList.toggle('active',m==='day');document.getElementById('bw').classList.toggle('active',m==='week');save();render();}
+function setView(m){S.viewMode=m;document.getElementById('bd').classList.toggle('active',m==='day');document.getElementById('bw').classList.toggle('active',m==='week');analytics.logEvent('view_toggle',{mode:m});save();render();}
 function shift(dir){const d=parse(S.viewStart);S.viewStart=S.viewMode==='day'?fmt(addD(d,dir*14)):fmt(addD(d,dir*56));save();render();}
 function goToday(){S.viewStart=fmt(addD(tod(),-7));save();render();}
 function getRef(){return refDate||tod();}
@@ -1806,10 +1818,10 @@ function renderColors(){
 function saveGroup(){
   const name=document.getElementById('gName').value.trim();if(!name)return;
   if(editGid){const g=findGroup(editGid);if(g){g.name=name;g.color=selColor;}}
-  else S.groups.push({id:uid(),name,color:selColor,tasks:[]});
+  else{S.groups.push({id:uid(),name,color:selColor,tasks:[]});analytics.logEvent('group_create');}
   save();closeGM();render();
 }
-function delGroup(){if(!confirm('그룹과 모든 업무를 삭제할까요?'))return;S.groups=S.groups.filter(g=>g.id!==editGid);save();closeGM();render();}
+function delGroup(){if(!confirm('그룹과 모든 업무를 삭제할까요?'))return;S.groups=S.groups.filter(g=>g.id!==editGid);analytics.logEvent('group_delete');save();closeGM();render();}
 function copyGroup(gid){
   const src=findGroup(gid);if(!src)return;
   const copy=JSON.parse(JSON.stringify(src));
@@ -1817,6 +1829,7 @@ function copyGroup(gid){
   copy.tasks.forEach(t=>t.id=uid());
   const idx=S.groups.findIndex(g=>g.id===gid);
   S.groups.splice(idx+1,0,copy);
+  analytics.logEvent('group_copy');
   save();render();
 }
 document.getElementById('gName').addEventListener('keydown',e=>{if(e.key==='Enter')saveGroup();});
@@ -1865,15 +1878,16 @@ function saveTask(){
     if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;if(actualEndDate)t.status='완료';}
   } else {
     const g=findGroup(editGidForT);
-    if(g)g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:'대기',actualProgress:null});
+    if(g){g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:'대기',actualProgress:null});analytics.logEvent('task_create');}
   }
   save();closeTM();render();
 }
-function delTask(){if(!confirm('업무를 삭제할까요?'))return;S.groups.forEach(g=>{g.tasks=g.tasks.filter(t=>t.id!==editTid);});save();closeTM();render();}
+function delTask(){if(!confirm('업무를 삭제할까요?'))return;S.groups.forEach(g=>{g.tasks=g.tasks.filter(t=>t.id!==editTid);});analytics.logEvent('task_delete');save();closeTM();render();}
 function deleteTask(tid){
   const t=findTask(tid);if(!t)return;
   if(!confirm(`'${t.name||'(이름 없음)'}'을(를) 삭제할까요?`))return;
   S.groups.forEach(g=>{g.tasks=g.tasks.filter(t2=>t2.id!==tid);});
+  analytics.logEvent('task_delete');
   save();render();
 }
 document.getElementById('tName').addEventListener('keydown',e=>{if(e.key==='Enter')saveTask();});
@@ -1900,6 +1914,7 @@ else auth.onAuthStateChanged(async user=>{
     }catch(e){
       try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e2){}
     }
+    analytics.logEvent('login');
     initApp();
     checkNotice();
   }else{
@@ -1982,6 +1997,7 @@ function checkNotice(){
 }
 
 function updateAndReload(){
+  analytics.logEvent('notice_update_click');
   db.collection('notices').doc('current').get().then(snap=>{
     if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
   }).catch(()=>{}).finally(()=>{
