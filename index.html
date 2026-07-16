@@ -227,6 +227,25 @@ body.share-mode .st-badge:hover{filter:none}
 .ms-color-btn{width:17px;height:17px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:transform .1s}
 .ms-color-btn:hover{transform:scale(1.15)}
 .ms-color-btn.sel{border-color:#333}
+
+@media (max-width: 767px) {
+  /* Header */
+  header{padding:0 10px;gap:6px;}
+  header h1{font-size:15px;}
+  #headerProjectControls,#headerChartControls{display:none!important;}
+  #userName,#lockSep,#reqBell{display:none!important;}
+  .proj-btn{max-width:150px;}
+  .proj-btn-name{max-width:100px;}
+
+  /* 간트 날짜 컬럼만 숨김 */
+  td.dc{display:none!important;}
+  .h-month th:not([class^="s"]),
+  .h-day th:not([class^="s"]){display:none!important;}
+
+  /* 모달 */
+  .modal{width:92vw!important;padding:20px 16px!important;}
+  .proj-panel{min-width:220px;}
+}
 </style>
 </head>
 <body>
@@ -496,18 +515,7 @@ body.share-mode .st-badge:hover{filter:none}
 // ═══════════════════════════════════════
 // Mobile detection
 // ═══════════════════════════════════════
-(function(){
-  const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<768;
-  if(isMobile){
-    document.body.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:32px;text-align:center;font-family:inherit;background:#f8f9ff">
-      <div style="font-size:40px;margin-bottom:16px">🚧</div>
-      <h1 style="font-size:20px;font-weight:800;color:#1a202c;margin:0 0 8px">Planit WBS</h1>
-      <p style="font-size:14px;color:#4361ee;font-weight:600;margin:0 0 16px">모바일 버전 준비 중</p>
-      <p style="font-size:13px;color:#718096;line-height:1.7;margin:0">현재 PC 환경에 최적화되어 있습니다.<br>데스크탑 브라우저에서 이용해주세요.</p>
-    </div>`;
-    return;
-  }
-})();
+window.isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<768;
 
 // ═══════════════════════════════════════
 // Firebase
