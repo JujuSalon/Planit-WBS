@@ -230,17 +230,19 @@ body.share-mode .st-badge:hover{filter:none}
 
 /* Mobile card layout */
 #mobileView{padding:8px;display:flex;flex-direction:column;gap:4px;min-height:100%}
-.mob-group-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px;border-radius:8px 8px 0 0;margin-top:8px}
+.mob-group-hd{display:flex;flex-direction:column;padding:10px 12px 8px;border-radius:8px 8px 0 0;margin-top:8px}
 .mob-group-hd:first-child{margin-top:0}
-.mob-group-meta{font-size:11px;color:var(--muted);padding:0 12px 8px;border-radius:0 0 0 0}
 .mob-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
 .mob-card-r1{display:flex;align-items:center;gap:6px;min-width:0}
 .mob-card-name{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mob-card-r2{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mob-card-r3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.mob-card-prog{display:flex;align-items:center;gap:6px;font-size:11px;flex:1;min-width:0}
-.mob-card-bar{flex:1;height:4px;background:#e9ecef;border-radius:2px;overflow:hidden;min-width:40px}
-.mob-card-bar-fill{height:100%;border-radius:2px}
+.mob-prog-cmp{display:flex;flex-direction:column;gap:4px;width:100%}
+.mob-prog-row{display:flex;align-items:center;gap:6px}
+.mob-prog-lbl{font-size:10px;color:var(--muted);width:22px;flex-shrink:0}
+.mob-prog-track{flex:1;height:5px;background:#e9ecef;border-radius:3px;overflow:hidden;min-width:0}
+.mob-prog-fill{height:100%;border-radius:3px}
+.mob-prog-val{font-size:10px;font-weight:700;width:26px;flex-shrink:0;text-align:right}
 .mob-card-acts{display:flex;align-items:center;gap:4px;flex-shrink:0}
 
 @media (max-width: 767px) {
@@ -485,6 +487,8 @@ body.share-mode .st-badge:hover{filter:none}
       <div class="dr"><input id="tS" type="date"/><span>~</span><input id="tEE" type="date"/></div>
     </div>
     <div class="fg"><label>실종료일</label><input id="tAE" type="date"/></div>
+    <div class="fg" id="tExpProgFg"><label>예상진척률</label><div id="tExpProgVal" style="font-size:13px;padding:5px 0;color:var(--muted)">-</div></div>
+    <div class="fg" id="tActProgFg"><label>실진척률</label><input id="tActProg" type="number" min="0" max="100" step="1" placeholder="0 ~ 100"/></div>
     <div class="fg"><label>업무 링크 <span style="font-weight:400;text-transform:none;font-size:11px">(Jira, Notion 등)</span></label><input id="tLink" type="url" placeholder="https://..."/></div>
     <div class="mf">
       <button class="btn" onclick="closeTM()">취소</button>
@@ -1493,26 +1497,22 @@ function renderMobile(){
     const ghd=document.createElement('div');
     ghd.className='mob-group-hd';
     ghd.style.cssText=`background:${hex2rgba(g.color,.08)};border-left:3px solid ${g.color}`;
-    ghd.innerHTML=`<div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
-      <div style="width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></div>
-      <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span>
-      ${totalMd?`<span style="font-size:11px;color:var(--muted);flex-shrink:0">${totalMd}MD</span>`:''}
+    const dateParts=[];
+    if(validS.length) dateParts.push(sdf(parse(validS[0])));
+    if(validEE.length) dateParts.push(sdf(parse(validEE[validEE.length-1])));
+    ghd.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+        <div style="width:10px;height:10px;border-radius:50%;background:${g.color};flex-shrink:0"></div>
+        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span>
+        ${totalMd?`<span style="font-size:11px;color:var(--muted);flex-shrink:0">${totalMd}MD</span>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        ${!locked&&!shareMode?`<button class="ic" onclick="openTMNew('${g.id}')" title="업무 추가">${IC.plus}</button>
+        <button class="ic" onclick="openGME('${g.id}')" title="그룹 편집">${IC.pencil}</button>`:''}
+      </div>
     </div>
-    <div style="display:flex;gap:4px;flex-shrink:0">
-      ${!locked&&!shareMode?`<button class="ic" onclick="openTM('${g.id}')" title="업무 추가">${IC.plus}</button>
-      <button class="ic" onclick="openGME('${g.id}')" title="그룹 편집">${IC.pencil}</button>`:''}
-    </div>`;
+    ${dateParts.length?`<div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:18px">${dateParts.join(' ~ ')}</div>`:''}`;
     mv.appendChild(ghd);
-    if(validS.length||validEE.length){
-      const gm=document.createElement('div');
-      gm.className='mob-group-meta';
-      gm.style.cssText=`background:${hex2rgba(g.color,.04)};border-left:3px solid ${g.color};padding:0 12px 8px`;
-      const parts=[];
-      if(validS.length) parts.push(sdf(parse(validS[0])));
-      if(validEE.length) parts.push(sdf(parse(validEE[validEE.length-1])));
-      gm.textContent=parts.join(' ~ ');
-      mv.appendChild(gm);
-    }
     if(!g.tasks.length){
       const em=document.createElement('div');
       em.style.cssText='text-align:center;padding:12px;color:var(--muted);font-size:12px';
@@ -1563,17 +1563,24 @@ function renderMobile(){
       if(metaParts.length){
         const r2=document.createElement('div');r2.className='mob-card-r2';r2.innerHTML=metaParts.join(' · ');card.appendChild(r2);
       }
-      // Row 3: progress
+      // Row 3: progress comparison
       if(expPct!=null||actPct!=null||st){
         const r3=document.createElement('div');r3.className='mob-card-r3';
-        if(expPct!=null) r3.innerHTML+=`<span style="font-size:10px;color:var(--muted)">예상진척 ${expPct}%</span>`;
-        if(actPct!=null){
-          const pEl=document.createElement('div');pEl.className='mob-card-prog';
-          pEl.innerHTML=`<span style="font-size:11px;font-weight:600">실제진척 ${actPct}%</span><div class="mob-card-bar"><div class="mob-card-bar-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div>`;
-          if(!locked&&!shareMode){pEl.style.cursor='pointer';pEl.title='탭하여 수정';pEl.addEventListener('click',()=>{const cur=task.actualProgress!=null?String(task.actualProgress):'';startEdit(pEl,'number',cur,v=>{const t=findTask(tid);if(!t)return;t.actualProgress=v!=null&&v!==''?Math.min(100,Math.max(0,parseInt(v)||0)):null;save();renderMobile();});});}
-          r3.appendChild(pEl);
+        if(expPct!=null||actPct!=null){
+          const progBlock=document.createElement('div');progBlock.className='mob-prog-cmp';
+          if(expPct!=null){
+            const expRow=document.createElement('div');expRow.className='mob-prog-row';
+            expRow.innerHTML=`<span class="mob-prog-lbl">예상</span><div class="mob-prog-track"><div class="mob-prog-fill" style="width:${Math.min(expPct,100)}%;background:#adb5bd"></div></div><span class="mob-prog-val">${expPct}%</span>`;
+            progBlock.appendChild(expRow);
+          }
+          if(actPct!=null){
+            const actRow=document.createElement('div');actRow.className='mob-prog-row';
+            actRow.innerHTML=`<span class="mob-prog-lbl">실제</span><div class="mob-prog-track"><div class="mob-prog-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div><span class="mob-prog-val">${actPct}%</span>`;
+            progBlock.appendChild(actRow);
+          }
+          r3.appendChild(progBlock);
         }
-        if(st) r3.innerHTML+=STATUS_BADGE[st];
+        if(st) r3.insertAdjacentHTML('beforeend',STATUS_BADGE[st]);
         card.appendChild(r3);
       }
       mv.appendChild(card);
@@ -2022,9 +2029,29 @@ function openTME(tid){
   document.getElementById('tS').value=task.startDate||'';
   document.getElementById('tEE').value=task.expectedEndDate||'';
   document.getElementById('tAE').value=task.actualEndDate||'';
+  const expPct=calcExpectedProgress(task);
+  document.getElementById('tExpProgVal').textContent=expPct!=null?`${expPct}%`:'-';
+  document.getElementById('tActProg').value=task.actualProgress!=null?task.actualProgress:'';
+  document.getElementById('tExpProgFg').style.display='';
+  document.getElementById('tActProgFg').style.display='';
   document.getElementById('tLink').value=task.link||'';
   document.getElementById('tDelBtn').style.display='';
   document.getElementById('tModal').classList.add('show');
+}
+function openTMNew(gid){
+  editTid=null;editGidForT=gid;
+  document.getElementById('tTitle').textContent='업무 추가';
+  document.getElementById('tName').value='';
+  document.getElementById('tMd').value='';
+  document.getElementById('tS').value='';
+  document.getElementById('tEE').value='';
+  document.getElementById('tAE').value='';
+  document.getElementById('tExpProgFg').style.display='none';
+  document.getElementById('tActProgFg').style.display='none';
+  document.getElementById('tLink').value='';
+  document.getElementById('tDelBtn').style.display='none';
+  document.getElementById('tModal').classList.add('show');
+  setTimeout(()=>document.getElementById('tName').focus(),50);
 }
 function closeTM(){document.getElementById('tModal').classList.remove('show');}
 function saveTask(){
@@ -2034,9 +2061,11 @@ function saveTask(){
   const expectedEndDate=document.getElementById('tEE').value||null;
   const actualEndDate=document.getElementById('tAE').value||null;
   const link=document.getElementById('tLink').value.trim()||null;
+  const actProgRaw=document.getElementById('tActProg').value;
+  const actualProgress=actProgRaw!==''?Math.min(100,Math.max(0,parseInt(actProgRaw)||0)):null;
   if(editTid){
     const t=findTask(editTid);
-    if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;if(actualEndDate)t.status='완료';}
+    if(t){t.name=name;t.md=md?Number(md):null;t.startDate=startDate;t.expectedEndDate=expectedEndDate;t.actualEndDate=actualEndDate;t.link=link;t.actualProgress=actualProgress;if(actualEndDate)t.status='완료';}
   } else {
     const g=findGroup(editGidForT);
     if(g){g.tasks.push({id:uid(),name,md:md?Number(md):null,startDate,expectedEndDate,actualEndDate,link,status:'대기',actualProgress:null});analytics.logEvent('task_create');}
