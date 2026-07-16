@@ -395,7 +395,7 @@ body.share-mode .st-badge:hover{filter:none}
 <!-- Project rename modal -->
 <div class="overlay" id="pModal">
   <div class="modal" style="width:360px">
-    <h2>프로젝트 이름 변경</h2>
+    <h2 id="pModalTitle">프로젝트 이름 변경</h2>
     <div class="fg"><label>프로젝트명</label><input id="pName" placeholder="프로젝트 이름"/></div>
     <div class="mf">
       <button class="btn" onclick="closePM()">취소</button>
@@ -954,7 +954,7 @@ function switchProject(id){
   document.getElementById('bw').classList.toggle('active',S.viewMode==='week');
   resetRefDate();render();
 }
-function newProject(){const p=makeDefaultProject();APP.projects.push(p);setActive(p.id);save();closeProjPanel();renderProjSelector();resetRefDate();render();openPM(p.id);}
+function newProject(){closeProjPanel();openPM(null);}
 async function shareProject(id){
   if(!currentUser){alert('로그인이 필요합니다.');return;}
   const p=APP.projects.find(x=>x.id===id);if(!p)return;
@@ -1009,16 +1009,26 @@ function deleteProject(id){
   save();closeProjPanel();renderProjSelector();render();
 }
 function openPM(id){
-  editProjId=id;const p=APP.projects.find(x=>x.id===id);if(!p)return;
-  document.getElementById('pName').value=p.name;
+  editProjId=id;
+  const isNew=id===null;
+  document.getElementById('pModalTitle').textContent=isNew?'새 프로젝트 추가':'프로젝트 이름 변경';
+  const p=isNew?null:APP.projects.find(x=>x.id===id);
+  if(!isNew&&!p)return;
+  document.getElementById('pName').value=isNew?'':p.name;
   document.getElementById('pModal').classList.add('show');
-  setTimeout(()=>{document.getElementById('pName').focus();document.getElementById('pName').select();},50);
+  setTimeout(()=>{document.getElementById('pName').focus();if(!isNew)document.getElementById('pName').select();},50);
 }
 function closePM(){document.getElementById('pModal').classList.remove('show');}
 function saveProjName(){
   const name=document.getElementById('pName').value.trim();if(!name)return;
-  const p=APP.projects.find(x=>x.id===editProjId);if(p)p.name=name;
-  save();closePM();renderProjSelector();
+  if(editProjId===null){
+    const p=makeDefaultProject();p.name=name;
+    APP.projects.push(p);setActive(p.id);save();renderProjSelector();resetRefDate();render();
+  }else{
+    const p=APP.projects.find(x=>x.id===editProjId);if(p)p.name=name;
+    save();renderProjSelector();
+  }
+  closePM();
 }
 document.getElementById('pName').addEventListener('keydown',e=>{if(e.key==='Enter')saveProjName();});
 document.getElementById('pModal').addEventListener('click',function(e){if(e.target===this)closePM();});
