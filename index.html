@@ -1991,7 +1991,7 @@ function checkNotice(){
     if(!snap.exists)return;
     const d=snap.data();
     if(!d.active)return;
-    if(sessionStorage.getItem('wbs_notice_dismissed')===String(d.sentAt))return;
+    if(localStorage.getItem('wbs_notice_dismissed')===String(d.sentAt))return;
     document.getElementById('noticePopupText').textContent=d.message;
     document.getElementById('noticePopup').classList.add('show');
   },()=>{});
@@ -2000,7 +2000,7 @@ function checkNotice(){
 function updateAndReload(){
   analytics.logEvent('notice_update_click');
   db.collection('notices').doc('current').get().then(snap=>{
-    if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
+    if(snap.exists)localStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
   }).catch(()=>{}).finally(()=>{
     fetch(location.pathname,{cache:'no-store'}).catch(()=>{}).finally(()=>location.reload());
   });
