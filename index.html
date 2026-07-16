@@ -1984,16 +1984,17 @@ function clearAdminNotice(){
 // Notice Popup
 // ═══════════════════════════════════════
 function checkNotice(){
+  if(shareMode)return;
   const firstLogin=localStorage.getItem('wbs_first_login');
   if(!firstLogin){localStorage.setItem('wbs_first_login',String(Date.now()));return;}
-  db.collection('notices').doc('current').get().then(snap=>{
+  db.collection('notices').doc('current').onSnapshot(snap=>{
     if(!snap.exists)return;
     const d=snap.data();
     if(!d.active)return;
     if(sessionStorage.getItem('wbs_notice_dismissed')===String(d.sentAt))return;
     document.getElementById('noticePopupText').textContent=d.message;
     document.getElementById('noticePopup').classList.add('show');
-  }).catch(()=>{});
+  },()=>{});
 }
 
 function updateAndReload(){
