@@ -442,6 +442,22 @@ body.share-mode .st-badge:hover{filter:none}
   </div>
 </div>
 
+<!-- 관리자 비밀번호 모달 -->
+<div class="overlay" id="adminPwModal">
+  <div class="modal" style="width:300px">
+    <h2>관리자 인증</h2>
+    <div class="fg" style="margin-top:16px">
+      <label>비밀번호</label>
+      <input id="adminPwInput" type="password" placeholder="비밀번호 입력"/>
+    </div>
+    <p id="adminPwError" style="font-size:12px;color:#dc3545;margin-top:-6px;display:none">비밀번호가 올바르지 않습니다.</p>
+    <div class="mf">
+      <button class="btn" onclick="closeAdminPwModal()">취소</button>
+      <button class="btn btn-primary" onclick="submitAdminPw()">확인</button>
+    </div>
+  </div>
+</div>
+
 <!-- 관리자 공지 설정 모달 -->
 <div class="overlay" id="adminNoticeModal">
   <div class="modal" style="width:420px">
@@ -1898,15 +1914,34 @@ else auth.onAuthStateChanged(async user=>{
 // ═══════════════════════════════════════
 // Admin Notice
 // ═══════════════════════════════════════
-let adminClickCount=0,adminClickTimer=null;
-document.querySelector('header h1').addEventListener('click',(e)=>{
+let adminHoldTimer=null;
+const adminH1=document.querySelector('header h1');
+adminH1.addEventListener('mousedown',(e)=>{
   if(shareMode)return;
   e.preventDefault();
-  adminClickCount++;
-  clearTimeout(adminClickTimer);
-  adminClickTimer=setTimeout(()=>{adminClickCount=0;},2000);
-  if(adminClickCount>=10){adminClickCount=0;openAdminNoticeModal();}
+  adminHoldTimer=setTimeout(()=>{adminHoldTimer=null;openAdminPwModal();},5000);
 });
+['mouseup','mouseleave'].forEach(ev=>adminH1.addEventListener(ev,()=>{
+  clearTimeout(adminHoldTimer);adminHoldTimer=null;
+}));
+function openAdminPwModal(){
+  document.getElementById('adminPwInput').value='';
+  document.getElementById('adminPwError').style.display='none';
+  document.getElementById('adminPwModal').classList.add('show');
+  setTimeout(()=>document.getElementById('adminPwInput').focus(),50);
+}
+function closeAdminPwModal(){document.getElementById('adminPwModal').classList.remove('show');}
+function submitAdminPw(){
+  if(document.getElementById('adminPwInput').value==='1569'){
+    closeAdminPwModal();openAdminNoticeModal();
+  }else{
+    document.getElementById('adminPwError').style.display='block';
+    document.getElementById('adminPwInput').value='';
+    document.getElementById('adminPwInput').focus();
+  }
+}
+document.getElementById('adminPwInput').addEventListener('keydown',e=>{if(e.key==='Enter')submitAdminPw();});
+
 function openAdminNoticeModal(){
   db.collection('notices').doc('current').get().then(snap=>{
     document.getElementById('adminNoticeText').value=(snap.exists&&snap.data().message)||'';
