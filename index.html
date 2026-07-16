@@ -238,8 +238,8 @@ body.share-mode .st-badge:hover{filter:none}
 .mob-card-name{flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mob-card-r2{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mob-card-r3{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.mob-card-prog{display:flex;align-items:center;gap:4px;font-size:11px}
-.mob-card-bar{width:50px;height:4px;background:#e9ecef;border-radius:2px;overflow:hidden;flex-shrink:0}
+.mob-card-prog{display:flex;align-items:center;gap:6px;font-size:11px;flex:1;min-width:0}
+.mob-card-bar{flex:1;height:4px;background:#e9ecef;border-radius:2px;overflow:hidden;min-width:40px}
 .mob-card-bar-fill{height:100%;border-radius:2px}
 .mob-card-acts{display:flex;align-items:center;gap:4px;flex-shrink:0}
 
@@ -1534,6 +1534,12 @@ function renderMobile(){
       badge.textContent=task.status||'대기';
       if(!locked&&!shareMode){badge.style.cursor='pointer';badge.addEventListener('click',e=>{e.stopPropagation();const t=findTask(tid);if(!t)return;t.status=nextStatus(t.status);save();renderMobile();});}
       r1.append(nameEl,badge);
+      if(!locked&&!shareMode){
+        const editBtn=document.createElement('button');editBtn.className='ic';editBtn.title='업무 편집';
+        editBtn.innerHTML=IC.pencil;editBtn.style.cssText='flex-shrink:0;opacity:.5';
+        editBtn.addEventListener('click',e=>{e.stopPropagation();openTME(tid);});
+        r1.appendChild(editBtn);
+      }
       if(task.link){
         const la=document.createElement('a');la.href=task.link;la.target='_blank';
         la.style.cssText='color:var(--primary);display:inline-flex;align-items:center;flex-shrink:0';
@@ -1560,10 +1566,10 @@ function renderMobile(){
       // Row 3: progress
       if(expPct!=null||actPct!=null||st){
         const r3=document.createElement('div');r3.className='mob-card-r3';
-        if(expPct!=null) r3.innerHTML+=`<span style="font-size:10px;color:var(--muted)">예상 ${expPct}%</span>`;
+        if(expPct!=null) r3.innerHTML+=`<span style="font-size:10px;color:var(--muted)">예상진척 ${expPct}%</span>`;
         if(actPct!=null){
           const pEl=document.createElement('div');pEl.className='mob-card-prog';
-          pEl.innerHTML=`<span style="font-size:11px;font-weight:600">${actPct}%</span><div class="mob-card-bar"><div class="mob-card-bar-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div>`;
+          pEl.innerHTML=`<span style="font-size:11px;font-weight:600">실제진척 ${actPct}%</span><div class="mob-card-bar"><div class="mob-card-bar-fill" style="width:${Math.min(actPct,100)}%;background:${g.color}"></div></div>`;
           if(!locked&&!shareMode){pEl.style.cursor='pointer';pEl.title='탭하여 수정';pEl.addEventListener('click',()=>{const cur=task.actualProgress!=null?String(task.actualProgress):'';startEdit(pEl,'number',cur,v=>{const t=findTask(tid);if(!t)return;t.actualProgress=v!=null&&v!==''?Math.min(100,Math.max(0,parseInt(v)||0)):null;save();renderMobile();});});}
           r3.appendChild(pEl);
         }
