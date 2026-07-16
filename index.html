@@ -442,6 +442,39 @@ body.share-mode .st-badge:hover{filter:none}
   </div>
 </div>
 
+<!-- 관리자 공지 설정 모달 -->
+<div class="overlay" id="adminNoticeModal">
+  <div class="modal" style="width:420px">
+    <h2>관리자 공지 설정</h2>
+    <p class="sub">공지를 입력하면 모든 사용자에게 팝업으로 표시됩니다.</p>
+    <div class="fg">
+      <label>공지 내용</label>
+      <textarea id="adminNoticeText" rows="5" placeholder="사용자에게 표시될 공지 내용을 입력하세요" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;resize:vertical;background:var(--surface);color:var(--text);font-family:inherit;outline:none"></textarea>
+    </div>
+    <div class="mf">
+      <button class="btn btn-danger" onclick="clearAdminNotice()">공지 해제</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="closeAdminNoticeModal()">취소</button>
+        <button class="btn btn-primary" onclick="sendAdminNotice()">공지 발송</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 사용자 공지 팝업 -->
+<div class="overlay" id="noticePopup">
+  <div class="modal" style="width:380px;text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">📢</div>
+    <h2 style="margin-bottom:6px">업데이트 안내</h2>
+    <p class="sub" style="margin-bottom:16px">Planit WBS에 새로운 업데이트가 있습니다.</p>
+    <p id="noticePopupText" style="font-size:13px;line-height:1.8;color:var(--text);margin-bottom:24px;white-space:pre-wrap;text-align:left;background:var(--bg);border-radius:8px;padding:12px 14px"></p>
+    <div style="display:flex;justify-content:center;gap:12px">
+      <button class="btn" onclick="dismissNotice()">나중에</button>
+      <button class="btn btn-primary" onclick="updateAndReload()">업데이트</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════
 // Mobile detection
@@ -1852,6 +1885,7 @@ else auth.onAuthStateChanged(async user=>{
       try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e2){}
     }
     initApp();
+    checkNotice();
   }else{
     currentUser=null;
     document.getElementById('loginOverlay').style.display='flex';
@@ -1860,6 +1894,60 @@ else auth.onAuthStateChanged(async user=>{
     document.getElementById('logoutBtn').style.display='none';
   }
 })
+
+// ═══════════════════════════════════════
+// Admin Notice
+// ═══════════════════════════════════════
+let adminClickCount=0,adminClickTimer=null;
+document.querySelector('header h1').addEventListener('click',()=>{
+  adminClickCount++;
+  clearTimeout(adminClickTimer);
+  adminClickTimer=setTimeout(()=>{adminClickCount=0;},2000);
+  if(adminClickCount>=10){adminClickCount=0;openAdminNoticeModal();}
+});
+function openAdminNoticeModal(){
+  db.collection('notices').doc('current').get().then(snap=>{
+    document.getElementById('adminNoticeText').value=(snap.exists&&snap.data().message)||'';
+  }).catch(()=>{document.getElementById('adminNoticeText').value='';});
+  document.getElementById('adminNoticeModal').classList.add('show');
+}
+function closeAdminNoticeModal(){document.getElementById('adminNoticeModal').classList.remove('show');}
+function sendAdminNotice(){
+  const msg=document.getElementById('adminNoticeText').value.trim();if(!msg)return;
+  db.collection('notices').doc('current').set({active:true,message:msg,sentAt:Date.now()})
+    .then(()=>{showToast('공지가 발송되었습니다.');closeAdminNoticeModal();})
+    .catch(e=>showToast('오류: '+e.message));
+}
+function clearAdminNotice(){
+  db.collection('notices').doc('current').set({active:false,message:'',sentAt:Date.now()})
+    .then(()=>{showToast('공지가 해제되었습니다.');closeAdminNoticeModal();})
+    .catch(e=>showToast('오류: '+e.message));
+}
+
+// ═══════════════════════════════════════
+// Notice Popup
+// ═══════════════════════════════════════
+function checkNotice(){
+  db.collection('notices').doc('current').get().then(snap=>{
+    if(!snap.exists)return;
+    const d=snap.data();
+    if(!d.active)return;
+    if(sessionStorage.getItem('wbs_notice_dismissed')===String(d.sentAt))return;
+    document.getElementById('noticePopupText').textContent=d.message;
+    document.getElementById('noticePopup').classList.add('show');
+  }).catch(()=>{});
+}
+function dismissNotice(){
+  db.collection('notices').doc('current').get().then(snap=>{
+    if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
+  }).catch(()=>{});
+  document.getElementById('noticePopup').classList.remove('show');
+}
+function updateAndReload(){
+  db.collection('notices').doc('current').get().then(snap=>{
+    if(snap.exists)sessionStorage.setItem('wbs_notice_dismissed',String(snap.data().sentAt));
+  }).catch(()=>{}).finally(()=>location.reload());
+}
 </script>
 </body>
 </html>
