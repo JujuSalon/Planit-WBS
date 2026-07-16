@@ -1969,6 +1969,8 @@ function clearAdminNotice(){
 // Notice Popup
 // ═══════════════════════════════════════
 function checkNotice(){
+  const firstLogin=localStorage.getItem('wbs_first_login');
+  if(!firstLogin){localStorage.setItem('wbs_first_login',String(Date.now()));return;}
   db.collection('notices').doc('current').get().then(snap=>{
     if(!snap.exists)return;
     const d=snap.data();
