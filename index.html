@@ -1164,6 +1164,7 @@ function copyProject(id){
   const src=APP.projects.find(p=>p.id===id);if(!src)return;
   const copy=JSON.parse(JSON.stringify(src));
   copy.id=uid();copy.name=src.name+' (복사)';
+  delete copy.shareId;
   copy.groups.forEach(g=>{g.id=uid();g.tasks.forEach(t=>t.id=uid());});
   APP.projects.splice(APP.projects.findIndex(p=>p.id===id)+1,0,copy);
   setActive(copy.id);save();closeProjPanel();renderProjSelector();render();
@@ -1172,6 +1173,7 @@ function copyProject(id){
 function deleteProject(id){
   const p=APP.projects.find(x=>x.id===id);
   if(!confirm(`"${p?.name}" 프로젝트를 삭제할까요?\n모든 데이터가 삭제됩니다.`))return;
+  if(p?.shareId&&currentUser)db.collection('shares').doc(p.shareId).delete().catch(()=>{});
   APP.projects=APP.projects.filter(x=>x.id!==id);
   if(APP.activeId===id){
     if(APP.projects.length)setActive(APP.projects[0].id);
@@ -2175,6 +2177,7 @@ else auth.onAuthStateChanged(async user=>{
     currentUser=null;
     if(window._mobileSyncUnsub){window._mobileSyncUnsub();window._mobileSyncUnsub=null;}
     window._mobileSyncStarted=false;
+    if(window._noticeUnsub){window._noticeUnsub();window._noticeUnsub=null;}
     if(reqListener){reqListener();reqListener=null;}
     _listeningShareId=null;
     pendingRequests=[];
@@ -2270,7 +2273,8 @@ function checkNotice(){
   if(shareMode)return;
   const firstLogin=localStorage.getItem('wbs_first_login');
   if(!firstLogin){localStorage.setItem('wbs_first_login',String(Date.now()));return;}
-  db.collection('notices').doc('current').onSnapshot(snap=>{
+  if(window._noticeUnsub){window._noticeUnsub();window._noticeUnsub=null;}
+  window._noticeUnsub=db.collection('notices').doc('current').onSnapshot(snap=>{
     if(!snap.exists)return;
     const d=snap.data();
     if(!d.active)return;
