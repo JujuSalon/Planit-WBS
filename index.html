@@ -105,7 +105,7 @@ th,td{border:1px solid var(--border)}
 .h-day .th-we{background:#3d4a5a;color:#a0aec0}
 .h-day .th-tod{background:#b7791f}
 .h-day .th-hol{background:#3d4a5a;color:#a0aec0}
-.h-day .th-ref{background:#5a6475;color:#d1d8e0;border-left:2px solid #e63946}
+.h-day .th-ref{background:#5a6475;color:#d1d8e0;border-right:2px solid #e63946}
 
 .dc{cursor:pointer;user-select:none;background:#fff}
 .dc:hover{filter:brightness(.88)}
@@ -1510,8 +1510,8 @@ function cellStyle(d,ts,te,gColor,isDone){
   else if(hn){cls='dc hol';}
   else if(we){cls='dc we';}
   const ms=getMilestone(d);
-  const borderLeft=ref_?'2px solid #e63946':(ms?`2px solid ${ms.color}`:'');
-  return{bg,cls,opacity,title,borderLeft};
+  const borderRight=ref_?'2px solid #e63946':(ms?`2px solid ${ms.color}`:'');
+  return{bg,cls,opacity,title,borderRight};
 }
 
 // ═══════════════════════════════════════
@@ -1691,7 +1691,7 @@ function render(){
     th.className=ref_?'th-ref':(tod_?'th-tod':(hn?'th-hol':(we?'th-we':'')));
     const titleParts=[];if(ms)titleParts.push(ms.name||'이벤트');if(hn)titleParts.push(hn);
     if(titleParts.length)th.title=titleParts.join(' / ');
-    if(ms&&!ref_)th.style.borderLeft=`2px solid ${ms.color}`;
+    if(ms&&!ref_)th.style.borderRight=`2px solid ${ms.color}`;
     th.style.width=th.style.minWidth=CW+'px';
     th.innerHTML=S.viewMode==='day'
       ?`<div>${d.getDate()}</div><div style="font-size:9px;opacity:.7">${DOW[d.getDay()]}</div>`
@@ -1777,8 +1777,8 @@ function render(){
     dates.forEach(d=>{
       const td=gr.insertCell();td.style.background=hex2rgba(g.color,.03);
       const ref_=refDate&&same(d,refDate),ms=getMilestone(d);
-      if(ref_)td.style.borderLeft='2px solid #e63946';
-      else if(ms)td.style.borderLeft=`2px solid ${ms.color}`;
+      if(ref_)td.style.borderRight='2px solid #e63946';
+      else if(ms)td.style.borderRight=`2px solid ${ms.color}`;
     });
 
     // Task rows
@@ -1908,8 +1908,8 @@ function render(){
       const ts=task.startDate?parse(task.startDate):null,te=task.expectedEndDate?parse(task.expectedEndDate):null;
       dates.forEach(d=>{
         const dc=tr.insertCell();
-        const{bg,cls,opacity,title,borderLeft}=cellStyle(d,ts,te,g.color,isDone);
-        dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderLeft=borderLeft||'';
+        const{bg,cls,opacity,title,borderRight}=cellStyle(d,ts,te,g.color,isDone);
+        dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderRight=borderRight||'';
         if(title)dc.title=title;
         dc.dataset.date=fmt(d);dc.dataset.tid=tid;
         dc.style.width=dc.style.minWidth=CW+'px';
@@ -1976,8 +1976,8 @@ function repaintTask(tid){
   const isDone=task.status==='완료';
   document.querySelectorAll(`td[data-tid="${tid}"][data-date]`).forEach(dc=>{
     const d=parse(dc.dataset.date);
-    const{bg,cls,opacity,title,borderLeft}=cellStyle(d,ts,te,group.color,isDone);
-    dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderLeft=borderLeft||'';
+    const{bg,cls,opacity,title,borderRight}=cellStyle(d,ts,te,group.color,isDone);
+    dc.className=cls;dc.style.background=bg;dc.style.opacity=opacity;dc.style.borderRight=borderRight||'';
     if(title)dc.title=title;else dc.removeAttribute('title');
   });
   const tr=document.querySelector(`tr[data-tid="${tid}"]`);if(!tr)return;
