@@ -287,6 +287,7 @@ body.share-mode .st-badge:hover{filter:none}
   .proj-btn-name{max-width:100px;}
   .proj-panel-footer{display:none!important;}
   #emptyState .btn-primary{display:none!important;}
+  #emptyMobileNote{display:block!important;}
   .st-badge{pointer-events:none;-webkit-tap-highlight-color:transparent;}
   .proj-item-acts button:not([title="공유 링크 복사"]){display:none!important;}
 
@@ -387,6 +388,7 @@ body.share-mode .st-badge:hover{filter:none}
   <p style="font-size:15px;font-weight:700;color:var(--text)">프로젝트가 없습니다</p>
   <p style="font-size:13px">새 프로젝트를 만들어 WBS를 시작하세요.</p>
   <button class="btn btn-primary" style="margin-top:8px" onclick="newProject()">+ 새 프로젝트 만들기</button>
+  <p id="emptyMobileNote" style="font-size:12px;color:var(--muted);display:none">PC에서 프로젝트를 추가할 수 있습니다.</p>
 </div>
 <div class="gantt-wrap" id="gw">
   <table id="gt"><thead id="gh"></thead><tbody id="gb"></tbody></table>
