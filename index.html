@@ -4,6 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Planit WBS</title>
+<script>
+(function(){
+  var ua=navigator.userAgent;
+  var isInApp=/KAKAOTALK|KAKAO|Line\/|FB_IAB|FBAN\/|Instagram|Naver|DaumApps/i.test(ua)
+    ||(ua.indexOf('iPhone')>-1&&ua.indexOf('Safari')===-1&&ua.indexOf('CriOS')===-1&&ua.indexOf('FxiOS')===-1);
+  if(!isInApp)return;
+  var isAndroid=ua.indexOf('Android')>-1;
+  if(isAndroid){
+    // Android: Chrome으로 강제 전환
+    var url=location.href;
+    location.href='intent://'+url.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';
+    return;
+  }
+  // iOS: 안내 배너 표시
+  document.addEventListener('DOMContentLoaded',function(){
+    var banner=document.createElement('div');
+    banner.id='inapp-banner';
+    banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#1a1a2e;color:#fff;padding:14px 16px 14px 16px;font-size:13px;line-height:1.6;display:flex;align-items:flex-start;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.3)';
+    banner.innerHTML='<span style="font-size:20px;flex-shrink:0">⚠️</span>'
+      +'<div style="flex:1">'
+      +'<strong style="display:block;margin-bottom:4px">카카오톡 앱에서는 Google 로그인이 제한됩니다</strong>'
+      +'Safari에서 열어주세요. 우측 하단 <strong>공유 버튼(⬜↑)</strong> → <strong>Safari로 열기</strong>'
+      +'</div>'
+      +'<button onclick="document.getElementById(\'inapp-banner\').remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;flex-shrink:0;margin-top:2px">닫기</button>';
+    document.body.prepend(banner);
+  });
+})();
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
