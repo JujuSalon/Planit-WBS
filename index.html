@@ -1018,11 +1018,15 @@ function initApp(){
       try{
         const fsData=JSON.parse(snap.data().data);
         if((fsData._savedAt||0)>(APP._savedAt||0)){
+          const prevActiveId=APP.activeId;
           APP=fsData;
           if(!APP.projects)APP.projects=[];
           APP.projects.forEach(migrate);
-          if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId))
+          if(prevActiveId&&APP.projects.find(p=>p.id===prevActiveId)){
+            APP.activeId=prevActiveId;
+          }else if(!APP.activeId||!APP.projects.find(p=>p.id===APP.activeId)){
             APP.activeId=APP.projects[0]?.id||null;
+          }
           setActive(APP.activeId);
           renderProjSelector();render();
         }
