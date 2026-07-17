@@ -1596,7 +1596,9 @@ function renderMobile(){
       const badge=document.createElement('span');
       badge.className='st-badge '+(STATUS_CLASS[task.status||'대기']||'st-wait');
       badge.textContent=task.status||'대기';
-      r1.append(nameEl,badge);
+      r1.appendChild(nameEl);
+      if(st){const tmp=document.createElement('span');tmp.innerHTML=STATUS_BADGE[st];r1.appendChild(tmp.firstElementChild);}
+      r1.appendChild(badge);
       if(task.link){
         const la=document.createElement('a');la.href=task.link;la.target='_blank';
         la.style.cssText='color:var(--primary);display:inline-flex;align-items:center;flex-shrink:0';
