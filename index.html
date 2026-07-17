@@ -1013,7 +1013,7 @@ function initApp(){
   renderProjSelector();render();
   if(isMobile&&currentUser&&!window._mobileSyncStarted){
     window._mobileSyncStarted=true;
-    db.collection('users').doc(currentUser.uid).onSnapshot(snap=>{
+    window._mobileSyncUnsub=db.collection('users').doc(currentUser.uid).onSnapshot(snap=>{
       if(!snap.exists||!snap.data().data)return;
       try{
         const fsData=JSON.parse(snap.data().data);
@@ -2145,6 +2145,7 @@ if(_shareId){loadShareMode(_shareId);}
 else auth.onAuthStateChanged(async user=>{
   if(user){
     currentUser=user;
+    APP={projects:[],activeId:null};
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('userAvatar').src=user.photoURL||'';
     document.getElementById('userAvatar').style.display=user.photoURL?'':'none';
@@ -2166,6 +2167,12 @@ else auth.onAuthStateChanged(async user=>{
     checkNotice();
   }else{
     currentUser=null;
+    if(window._mobileSyncUnsub){window._mobileSyncUnsub();window._mobileSyncUnsub=null;}
+    window._mobileSyncStarted=false;
+    if(reqListener){reqListener();reqListener=null;}
+    _listeningShareId=null;
+    pendingRequests=[];
+    APP={projects:[],activeId:null};
     document.getElementById('loginOverlay').style.display='flex';
     document.getElementById('userAvatar').style.display='none';
     document.getElementById('userName').textContent='';
