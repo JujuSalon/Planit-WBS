@@ -774,7 +774,7 @@ async function approveRequest(reqId,taskId,progress){
   const task=findTask(taskId);if(!task){alert('업무를 찾을 수 없습니다.');return;}
   task.actualProgress=progress;
   APP._savedAt=Date.now();
-  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
+  if(currentUser){try{localStorage.setItem('wbs_app_'+currentUser.uid,JSON.stringify(APP));}catch(e){}}
   clearTimeout(saveTimer);saveToFirestore();render();
   await db.collection('requests').doc(reqId).update({status:'approved'}).catch(e=>console.error(e));
 }
@@ -783,7 +783,7 @@ async function approveEndDateRequest(reqId,taskId,endDate){
   task.actualEndDate=endDate||null;
   if(endDate)task.status='완료';
   APP._savedAt=Date.now();
-  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
+  if(currentUser){try{localStorage.setItem('wbs_app_'+currentUser.uid,JSON.stringify(APP));}catch(e){}}
   clearTimeout(saveTimer);saveToFirestore();render();
   await db.collection('requests').doc(reqId).update({status:'approved'}).catch(e=>console.error(e));
 }
@@ -947,8 +947,8 @@ const saveToFirestore=()=>{
 };
 const save=()=>{
   APP._savedAt=Date.now();
-  try{localStorage.setItem('wbs_app',JSON.stringify(APP));}catch(e){}
   if(!currentUser)return;
+  try{localStorage.setItem('wbs_app_'+currentUser.uid,JSON.stringify(APP));}catch(e){}
   clearTimeout(saveTimer);
   saveTimer=setTimeout(saveToFirestore,1500);
 };
@@ -2154,12 +2154,12 @@ else auth.onAuthStateChanged(async user=>{
       const snap=await db.collection('users').doc(user.uid).get();
       let fsData=null,lsData=null;
       if(snap.exists&&snap.data().data){try{fsData=JSON.parse(snap.data().data);}catch(e){}}
-      try{const s=localStorage.getItem('wbs_app');if(s)lsData=JSON.parse(s);}catch(e){}
+      try{const s=localStorage.getItem('wbs_app_'+user.uid);if(s)lsData=JSON.parse(s);}catch(e){}
       if(fsData&&lsData){APP=(fsData._savedAt||0)>=(lsData._savedAt||0)?fsData:lsData;}
       else if(fsData){APP=fsData;}
       else if(lsData){APP=lsData;}
     }catch(e){
-      try{const s=localStorage.getItem('wbs_app');if(s)APP=JSON.parse(s);}catch(e2){}
+      try{const s=localStorage.getItem('wbs_app_'+user.uid);if(s)APP=JSON.parse(s);}catch(e2){}
     }
     analytics.logEvent('login');
     initApp();
