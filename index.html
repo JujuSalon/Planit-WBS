@@ -1832,7 +1832,7 @@ function render(){
       tasc.addEventListener('click',()=>{startEdit(tasc,'text',task.assignee||'',v=>{const t=findTask(tid);if(t){t.assignee=v||null;save();}render();});});
 
       const tmc=tr.insertCell();tmc.className='s3';
-      tmc.innerHTML=`<div class="cv muted">${task.md!=null?task.md:''}</div>`;
+      tmc.innerHTML=`<div class="cv">${task.md!=null?task.md:''}</div>`;
       tmc.addEventListener('click',()=>{startEdit(tmc,'number',task.md!=null?String(task.md):'',v=>{const t=findTask(tid);if(t){t.md=v!=null?Number(v):null;save();}render();});});
 
       const tsc=tr.insertCell();tsc.className='s4';
