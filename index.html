@@ -1649,7 +1649,8 @@ function render(){
     const done=t.status==='완료';
     return a+(done?(t.actualProgress??100):(t.actualProgress??0))*(Number(t.md)||1);
   },0)/projMdW):null;
-  const projSt=scheduleStatus(projAggExp,projAggAct,'진행중');
+  const allTasksDone=allTasks.length>0&&allTasks.every(t=>t.status==='완료');
+  const projSt=allTasksDone?null:scheduleStatus(projAggExp,projAggAct,'진행중');
 
   // Header row 1: month
   const r1=head.insertRow();r1.className='h-month';
@@ -1771,7 +1772,8 @@ function render(){
     }
     const gsc9=gr.insertCell();gsc9.className='s10';gsc9.style.background=gbgS;
     if(aggExp!=null&&aggAct!=null){
-      const gst=scheduleStatus(aggExp,aggAct,'진행중');
+      const allDone=g.tasks.every(t=>t.status==='완료');
+      const gst=allDone?null:scheduleStatus(aggExp,aggAct,'진행중');
       if(gst)gsc9.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%">${STATUS_BADGE[gst]}</div>`;
     }
     dates.forEach(d=>{
