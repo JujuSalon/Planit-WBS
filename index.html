@@ -1850,7 +1850,10 @@ function render(){
 
       const tlc=tr.insertCell();tlc.className='s1';
       if(task.link){
-        tlc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%"><a href="${esc(task.link)}" target="_blank" style="color:var(--primary);display:inline-flex;align-items:center;text-decoration:none;line-height:1" title="${esc(task.link)}" onclick="event.stopPropagation()">${IC.link}</a></div>`;
+        const linkTitle=shareMode?esc(task.link):`${esc(task.link)}\n\n꾹 누르면 링크를 수정하거나 삭제할 수 있어요`;
+        tlc.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%"><a href="${esc(task.link)}" target="_blank" style="color:var(--primary);display:inline-flex;align-items:center;text-decoration:none;line-height:1" title="${linkTitle}" onclick="event.stopPropagation()">${IC.link}</a></div>`;
+      }else if(!shareMode){
+        tlc.title='클릭하면 링크를 추가할 수 있어요';
       }
       tlc.style.cursor='pointer';
       if(!shareMode){
